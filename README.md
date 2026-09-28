@@ -1,3 +1,6 @@
+## ⚠️ AI DISCLAIMER: This project is a vibecoded project.
+I have not doublechecked every line of code in this repository.
+
 # GK2 Performance
 
 A BepInEx 5 mod for **Graveyard Keeper 2** that removes stutter and freezes while walking, using doors and opening menus. It doesn't change how the game looks or plays, and it never touches your save files.
