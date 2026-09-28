@@ -1,0 +1,19 @@
+# Build output
+bin/
+obj/
+
+# IDE files
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+
+# OS files
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Built release files (published as GitHub Releases / the Workshop)
+dist/
+workshop/content/

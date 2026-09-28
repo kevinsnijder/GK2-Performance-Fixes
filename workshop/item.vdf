@@ -1,0 +1,78 @@
+"workshopitem"
+{
+	"appid"		"4358690"
+	"publishedfileid"		"3809616755"
+	"contentfolder"		"C:\Users\kevin\Downloads\Mods\Performance\workshop\content"
+	"previewfile"		"C:\Users\kevin\Downloads\Mods\Performance\workshop\preview.png"
+	"visibility"		"0"
+	"title"		"GK2 Performance"
+	"changenote"		"With No More Running Back: opening a chest in a big storage area (like the yard) no longer freezes the game for about a quarter of a second. That mod refreshed the chest window once per linked storage; the refresh now happens in one go. The chest window and its queue look exactly the same."
+	"description"		"Walking judders, doors freeze the game, and opening a chest stutters?
+This mod removes those hitches without changing how the game looks.
+
+[h2]Features[/h2]
+[list]
+[*][b]Smooth walking:[/b] the character and camera no longer judder while you walk
+[*][b]Less stutter while exploring:[/b] buildings, props and decor load in the background before they come on screen
+[*][b]Area preloading:[/b] everything an area needs is prepared ahead of time, mostly behind the loading screen
+[*][b]Doors and stairs:[/b] no more 0.5–0.8 s freeze when you use a door or staircase within the same area
+[*][b]Instant pause menu:[/b] the ~0.5 s delay on Esc is gone (this disables the bug reporter and hides its button)
+[*][b]Faster menus:[/b] menus are loaded in the background, so they open without delay the first time
+[*][b]Steady camera:[/b] opening a chest while walking no longer makes the camera jump
+[*][b]Smoother chests with [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3806668942]No More Running Back[/url]:[/b] no freeze when a chest opens in a big storage area, and no second hitch right after
+[*]Less CPU wasted on the game's log messages
+[/list]
+
+[h2]Compatibility[/h2]
+[list]
+[*]Tested with No More Running Back, [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3809824680]GK2 Sort To Nearby Chests[/url], Better Auto Crafting and GK2 Move Stations
+[*]No More Running Back is optional; without it everything else works the same
+[/list]
+
+[h2]Safety[/h2]
+[list]
+[*]Never reads or writes save data; add or remove it at any time, including mid-save
+[*]No visual changes
+[*]If a game update breaks something, the mod switches itself off and the game runs as normal
+[/list]
+
+[h2]Requirements[/h2]
+[list]
+[*][url=https://github.com/BepInEx/BepInEx/releases/latest]BepInEx 5[/url]
+[/list]
+
+[h2]Install[/h2]
+[b]Workshop:[/b] subscribe; with the GK2 Workshop auto-loader installed, it loads on the next game start
+
+[b]Manual:[/b] copy the [i]BepInEx[/i] folder from
+[code]steamapps\workshop\content\4358690\3809616755[/code]
+into the game folder (Steam Library → right-click Graveyard Keeper 2 → Manage → Browse local files); merge the folders
+
+Game folder after a manual install:
+[code]
+Graveyard Keeper 2
+└─ BepInEx
+   └─ plugins
+      └─ GK2Performance
+         └─ GK2Performance.dll   ← new
+[/code]
+
+[h2]Settings[/h2]
+[list]
+[*][i]BepInEx\config\gk2.performance.cfg[/i] is created on first start
+[*]Every feature can be switched off on its own; [i]EnableOptimizations = false[/i] turns everything off
+[*]Changes apply after restarting the game
+[/list]
+
+[h2]Uninstall[/h2]
+Unsubscribe, and delete [i]BepInEx\plugins\GK2Performance[/i] if you installed manually.
+
+[h2]About[/h2]
+Made with Claude Opus 5.5. Please report problems in the comments; attach [i]BepInEx\LogOutput.log[/i] if you can.
+
+[h2]Changelog[/h2]
+[b]v1.0.3[/b]: with No More Running Back, no ~0.25 s freeze when opening a chest in a big storage area like the yard
+[b]v1.0.2[/b]: with No More Running Back, no second hitch right after a chest opens
+[b]v1.0.1[/b]: removed the chest-window speed-ups (they could leave No More Running Back's queue next to chests empty); the pause menu's Report a bug button is hidden; no camera jump when opening a chest while walking
+[b]v1.0.0[/b]: first release"
+}
