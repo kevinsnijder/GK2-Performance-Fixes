@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using HarmonyLib;
 using LazyBearTechnology;
 using UnityEngine;
@@ -18,6 +19,7 @@ namespace GK2Performance
 		}
 	}
 
+	[PatchGroup(Features.BUG_REPORTER)]
 	[HarmonyPatch(typeof(BugReportScreenshot), nameof(BugReportScreenshot.Capture))]
 	internal static class BugReportScreenshotPatch
 	{
@@ -33,6 +35,7 @@ namespace GK2Performance
 		}
 	}
 
+	[PatchGroup(Features.BUG_REPORTER)]
 	[HarmonyPatch(typeof(UIGamePauseWindow), "CreateBugReportButton")]
 	internal static class PauseBugReportButtonPatch
 	{
@@ -43,6 +46,7 @@ namespace GK2Performance
 		}
 	}
 
+	[PatchGroup(Features.BUG_REPORTER)]
 	[HarmonyPatch(typeof(BugReporter), nameof(BugReporter.TryOpen))]
 	internal static class BugReporterOpenPatch
 	{
@@ -50,6 +54,113 @@ namespace GK2Performance
 		private static bool Prefix()
 		{
 			return !BugReporterSwitch.IsOn();
+		}
+	}
+
+	/// <summary>
+	/// The character window is not part of the UI scene; the game creates it the first time it opens, which freezes the
+	/// game for a moment. It is created behind the loading screen instead, the same way the game would.
+	/// </summary>
+	internal static class WindowPrecreate
+	{
+		private const string CHARACTER_WINDOW = "CharacterWindow";
+		private const int CREATES_PER_FRAME = 40;
+
+		private static readonly KeyValuePair<Type, int>[] PoolTargets =
+		{
+			new KeyValuePair<Type, int>(typeof(UIItemCell), 480),
+			new KeyValuePair<Type, int>(typeof(InventoryWidget), 24),
+			new KeyValuePair<Type, int>(typeof(BigItemInventoryWidget), 6),
+			new KeyValuePair<Type, int>(typeof(BagInventoryWidget), 6)
+		};
+
+		private static readonly FieldInfo PoolsCacheField = AccessTools.Field(typeof(UIPrefabsPooler), "poolsCache");
+		private static readonly FieldInfo PoolField = AccessTools.Field(typeof(UIPrefabPool), "pool");
+
+		private static bool windowPending;
+		private static bool cellsPending;
+
+		internal static bool IsBusy
+		{
+			get
+			{
+				return windowPending || cellsPending;
+			}
+		}
+
+		internal static void Begin()
+		{
+			var enabled = Plugin.EnableOptimizations.Value && Plugin.PrecreateWindows.Value;
+			windowPending = enabled;
+			cellsPending = enabled;
+		}
+
+		/// <summary>Called every frame. Creates the window once its prefab has been loaded, and fills the item cell pool.</summary>
+		internal static void Tick()
+		{
+			if (cellsPending)
+			{
+				cellsPending = FillPools();
+			}
+			if (!windowPending || !UiWindowPrefetch.IsLoaded(CHARACTER_WINDOW))
+			{
+				return;
+			}
+			windowPending = false;
+			try
+			{
+				LazyUI.GetWindow<CharacterWindow>();
+			}
+			catch (Exception ex)
+			{
+				Plugin.Log.LogWarning($"Could not create the character window early: {ex.Message}");
+			}
+		}
+
+		/// <summary>
+		/// Chest and inventory windows take their item cells and storage panels from pools that start nearly empty, so the
+		/// first big chest creates hundreds of them at once. The pools are filled a few per frame. Returns true while not done.
+		/// </summary>
+		private static bool FillPools()
+		{
+			try
+			{
+				var pooler = UIPrefabsPooler.Instance;
+				if (pooler == null || PoolsCacheField == null || PoolField == null)
+				{
+					return false;
+				}
+				var cache = PoolsCacheField.GetValue(pooler) as IDictionary<Type, UIPrefabPool>;
+				if (cache == null)
+				{
+					return false;
+				}
+				var created = 0;
+				foreach (var target in PoolTargets)
+				{
+					UIPrefabPool prefabPool;
+					if (!cache.TryGetValue(target.Key, out prefabPool) || prefabPool == null)
+					{
+						continue;
+					}
+					var pool = PoolField.GetValue(prefabPool) as Pool;
+					while (pool != null && pool.Objects.Count < target.Value)
+					{
+						if (created >= CREATES_PER_FRAME)
+						{
+							return true;
+						}
+						pool.AddObjectToPool();
+						created++;
+					}
+				}
+				return false;
+			}
+			catch (Exception ex)
+			{
+				Plugin.Log.LogWarning($"Could not fill the menu pools: {ex.Message}");
+				return false;
+			}
 		}
 	}
 
@@ -62,29 +173,75 @@ namespace GK2Performance
 		private const string BIG_PREFIX = "Assets/AddressableAssets/UIElements/WindowsBig/";
 		private const string SMALL_PREFIX = "Assets/AddressableAssets/UIElements/WindowsSmall/";
 		private const int STARTS_PER_FRAME = 2;
+		private const int STARTS_PER_FRAME_LOADING_SCREEN = 16;
+		private const float BUSY_TIMEOUT_SECONDS = 30f;
 
 		private static readonly Queue<string> Pending = new Queue<string>();
 		private static readonly List<AsyncOperationHandle<GameObject>> Held = new List<AsyncOperationHandle<GameObject>>();
 		private static bool started;
+		private static float startedAt;
 
-		/// <summary>Called every frame. Starts a couple of loads per frame; the handles are kept so the menus stay loaded.</summary>
+		private static bool Enabled
+		{
+			get
+			{
+				return Plugin.EnableOptimizations.Value && Plugin.PrefetchMenus.Value;
+			}
+		}
+
+		/// <summary>True while menus are still being loaded.</summary>
+		internal static bool IsBusy
+		{
+			get
+			{
+				if (!started || !Enabled || Time.realtimeSinceStartup - startedAt > BUSY_TIMEOUT_SECONDS)
+				{
+					return false;
+				}
+				if (Pending.Count > 0)
+				{
+					return true;
+				}
+				foreach (var handle in Held)
+				{
+					if (handle.IsValid() && !handle.IsDone)
+					{
+						return true;
+					}
+				}
+				return false;
+			}
+		}
+
+		/// <summary>Builds the list of menus once the first area has loaded.</summary>
+		internal static void Begin()
+		{
+			if (started || !Enabled)
+			{
+				return;
+			}
+			started = true;
+			startedAt = Time.realtimeSinceStartup;
+			BuildQueue();
+		}
+
+		/// <summary>Called every frame. Starts a few loads per frame; the handles are kept so the menus stay loaded.</summary>
 		internal static void Tick(bool worldReady)
 		{
-			if (!Plugin.EnableOptimizations.Value || !Plugin.PrefetchMenus.Value)
+			if (!Enabled)
 			{
 				return;
 			}
 			if (!started)
 			{
-				if (!worldReady)
+				if (worldReady)
 				{
-					return;
+					Begin();
 				}
-				started = true;
-				BuildQueue();
 				return;
 			}
-			for (var i = 0; i < STARTS_PER_FRAME && Pending.Count > 0; i++)
+			var starts = LoadingScreenHold.IsHolding ? STARTS_PER_FRAME_LOADING_SCREEN : STARTS_PER_FRAME;
+			for (var i = 0; i < starts && Pending.Count > 0; i++)
 			{
 				Held.Add(Addressables.LoadAssetAsync<GameObject>(Pending.Dequeue()));
 			}
@@ -130,6 +287,19 @@ namespace GK2Performance
 			{
 				Plugin.Log.LogWarning($"Menu prefetch skipped: {ex.Message}");
 			}
+		}
+
+		/// <summary>True when the prefab is loaded, or not queued at all.</summary>
+		internal static bool IsLoaded(string windowName)
+		{
+			foreach (var handle in Held)
+			{
+				if (handle.IsValid() && !handle.IsDone && handle.DebugName != null && handle.DebugName.Contains(windowName))
+				{
+					return false;
+				}
+			}
+			return !Pending.Any(key => key.Contains(windowName));
 		}
 
 		/// <summary>Queues a prefab only when it exists in the game's asset catalog.</summary>

@@ -211,6 +211,7 @@ namespace GK2Performance
 		}
 	}
 
+	[PatchGroup(Features.NOTEPAD_CHEST_REDRAW, typeof(NotepadChestRedraw))]
 	[HarmonyPatch(typeof(MultiInventoryWidget), "OnInventoryRedraw")]
 	internal static class MultiInventoryRedrawPatch
 	{

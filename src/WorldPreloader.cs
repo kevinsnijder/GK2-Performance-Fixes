@@ -369,6 +369,7 @@ namespace GK2Performance
 						return false;
 					}
 					pool.AddObjectToPool();
+					MeshPreinit.Run(pool.Objects.Peek());
 					return true;
 				}
 				case Kind.Constructor:
@@ -380,6 +381,7 @@ namespace GK2Performance
 						return false;
 					}
 					pool.AddObjectToPool();
+					MeshPreinit.Run(pool.Objects.Peek());
 					return true;
 				}
 				default:
@@ -406,6 +408,7 @@ namespace GK2Performance
 			part.CleanupChunkableComponents();
 			part.PooledAddressableKey = key;
 			owner.Release(key, part);
+			MeshPreinit.Run(part);
 			return true;
 		}
 
@@ -420,6 +423,7 @@ namespace GK2Performance
 		}
 	}
 
+	[PatchGroup(Features.PRELOAD_WORLD, typeof(WorldPreloader), typeof(GamePools))]
 	[HarmonyPatch(typeof(ScenePoolPathRegistry), nameof(ScenePoolPathRegistry.RegisterScenePaths))]
 	internal static class RegisterScenePathsPatch
 	{

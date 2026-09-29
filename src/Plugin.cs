@@ -16,7 +16,7 @@ namespace GK2Performance
 	{
 		public const string PluginGuid = "gk2.performance";
 		public const string PluginName = "GK2 Performance";
-		public const string PluginVersion = "1.0.3";
+		public const string PluginVersion = "1.1.0";
 
 		internal static ManualLogSource Log;
 
@@ -38,10 +38,18 @@ namespace GK2Performance
 		internal static ConfigEntry<bool> SmoothCameraOnMenuOpen;
 		internal static ConfigEntry<float> PreloadBudgetMs;
 		internal static ConfigEntry<int> PreloadInstancesPerPrefab;
+		internal static ConfigEntry<bool> HoldLoadingScreen;
+		internal static ConfigEntry<float> MaxHoldSeconds;
+		internal static ConfigEntry<bool> PrecreateWindows;
+		internal static ConfigEntry<bool> PrewarmMovingObjects;
+		internal static ConfigEntry<float> PrewarmBudgetMs;
+		internal static ConfigEntry<bool> SmoothWorldUpdates;
+		internal static ConfigEntry<bool> PrepareManagers;
+		internal static ConfigEntry<bool> CollectGarbageWhenHidden;
 
 		private Harmony harmony;
 
-		/// <summary>Loads the settings and applies the patches. If a game update broke a patch, all patches are removed so the game runs unmodded.</summary>
+		/// <summary>Loads the settings and applies the patches. A feature whose patch no longer fits the game is left out on its own.</summary>
 		private void Awake()
 		{
 			Log = Logger;
@@ -50,7 +58,7 @@ namespace GK2Performance
 			harmony = new Harmony(PluginGuid);
 			try
 			{
-				harmony.PatchAll(typeof(Plugin).Assembly);
+				PatchGroups.ApplyAll(harmony);
 			}
 			catch (Exception ex)
 			{
@@ -130,6 +138,38 @@ namespace GK2Performance
 			PreloadInstancesPerPrefab = Config.Bind("Preload", "PreloadInstancesPerPrefab", 4,
 				new ConfigDescription("Idle instances to pre-create per prefab (capped by how often the area uses it). 0 = only load prefabs.",
 					new AcceptableValueRange<int>(0, 32)));
+
+			HoldLoadingScreen = Config.Bind("Preload", "HoldLoadingScreen", true,
+				"Keep the loading screen up until the area's objects and the menus are loaded, instead of loading them during " +
+				"the first seconds of play (which hitches).");
+
+			MaxHoldSeconds = Config.Bind("Preload", "MaxHoldSeconds", 20f,
+				new ConfigDescription("Longest time the loading screen is kept up for this. The rest then loads during play.",
+					new AcceptableValueRange<float>(1f, 120f)));
+
+			PrepareManagers = Config.Bind("Preload", "PrepareManagers", true,
+				"Behind the loading screen, set up the game managers that are otherwise searched for or created the first time they are " +
+				"used (for example the first time a worker starts a craft), which freezes the game for tens of milliseconds.");
+
+			PrecreateWindows = Config.Bind("Menus", "PrecreateWindows", true,
+				"Behind the loading screen, create the character/inventory window and fill the item cell pools that chest and inventory " +
+				"windows use, instead of creating them the first time a menu opens.");
+
+			PrewarmMovingObjects = Config.Bind("Streaming", "PrewarmMovingObjects", true,
+				"Use the PrewarmPadding band for moving world objects (NPCs, workers, animals) too, so they load before they walk into view.");
+
+			SmoothWorldUpdates = Config.Bind("World", "SmoothWorldUpdates", true,
+				"After a slow frame the game runs all missed world logic steps (crafting, conveyors, NPCs) at once, which slows the next " +
+				"frame too. Run at most one extra step per frame instead; the rest follows in the next frames. No game time is lost.");
+
+			CollectGarbageWhenHidden = Config.Bind("World", "CollectGarbageWhenHidden", true,
+				"Run the garbage collector while the screen is black (door fades, end of a loading screen), so its ~20 ms pause " +
+				"happens less often during play.");
+
+			PrewarmBudgetMs = Config.Bind("Streaming", "PrewarmBudgetMs", 2f,
+				new ConfigDescription("Milliseconds per frame for loading buildings, stations, trees and NPCs that enter the band around the " +
+					"screen. Objects over budget start a frame later. 0 = the game's behaviour (all at once).",
+					new AcceptableValueRange<float>(0f, 16f)));
 
 			AsyncPrefabWarmup = Config.Bind("Streaming", "AsyncPrefabWarmup", true,
 				"Load a decor prefab from disk asynchronously before the game needs it, instead of the game's synchronous (frame-freezing) load.");

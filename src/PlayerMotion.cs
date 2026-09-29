@@ -25,14 +25,22 @@ namespace GK2Performance
 			{
 				return;
 			}
-			var rb = RbRef(body);
-			if (rb != null && rb.interpolation == RigidbodyInterpolation.None)
+			try
 			{
-				rb.interpolation = RigidbodyInterpolation.Interpolate;
+				var rb = RbRef(body);
+				if (rb != null && rb.interpolation == RigidbodyInterpolation.None)
+				{
+					rb.interpolation = RigidbodyInterpolation.Interpolate;
+				}
+			}
+			catch (System.Exception ex)
+			{
+				Plugin.Log.LogWarning($"Smooth player motion skipped: {ex.GetBaseException().Message}");
 			}
 		}
 	}
 
+	[PatchGroup(Features.PLAYER_MOTION, typeof(PlayerMotion))]
 	[HarmonyPatch(typeof(PlayerPhysicalBody), "FixedUpdate")]
 	internal static class PlayerFixedUpdatePatch
 	{

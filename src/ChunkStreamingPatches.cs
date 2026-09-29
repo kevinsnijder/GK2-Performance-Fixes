@@ -37,10 +37,33 @@ namespace GK2Performance
 		private static int budgetFrame = -1;
 		private static int preShownThisFrame;
 		private static float lastAppliedPadding = -1f;
+		private static float lastAppliedMovingPadding = -1f;
 
 		private static BurstablePlane[] planes;
 		private static int pass;
 		private static int lastPassFrame = -1;
+
+		/// <summary>Set when something unexpected went wrong; streaming then stays off and the game handles everything itself.</summary>
+		internal static bool Broken { get; private set; }
+
+		internal static void Fail(System.Exception ex)
+		{
+			if (Broken)
+			{
+				return;
+			}
+			Broken = true;
+			Plugin.Log.LogWarning($"Streaming switched off: {ex.GetBaseException().Message}");
+			try
+			{
+				ReleaseAllHeld();
+				PrewarmThrottle.Clear();
+			}
+			catch (System.Exception)
+			{
+				Tracked.Clear();
+			}
+		}
 
 		/// <summary>True while the world is active (the chunk manager processed a camera update in the last couple of frames).</summary>
 		internal static bool RanRecently
@@ -59,7 +82,7 @@ namespace GK2Performance
 			}
 		}
 
-		private static float BandPadding
+		internal static float BandPadding
 		{
 			get
 			{
@@ -83,11 +106,12 @@ namespace GK2Performance
 			}
 		}
 
-		/// <summary>Sets the prewarm band on the static layers. Moving objects keep the game's setting.</summary>
+		/// <summary>Sets the prewarm band on the static layers and, when enabled, on moving world objects such as NPCs.</summary>
 		private static void ApplyLayerSettings(ChunkManager manager)
 		{
 			var padding = Plugin.EnableOptimizations.Value ? BandPadding : VANILLA_PREWARM_PADDING;
-			if (Mathf.Approximately(padding, lastAppliedPadding))
+			var movingPadding = Plugin.EnableOptimizations.Value && Plugin.PrewarmMovingObjects.Value ? padding : VANILLA_PREWARM_PADDING;
+			if (Mathf.Approximately(padding, lastAppliedPadding) && Mathf.Approximately(movingPadding, lastAppliedMovingPadding))
 			{
 				return;
 			}
@@ -99,22 +123,33 @@ namespace GK2Performance
 			}
 			foreach (var layer in layers)
 			{
-				if (layer != null && !layer.IsDynamic)
+				if (layer == null)
+				{
+					continue;
+				}
+				if (!layer.IsDynamic)
 				{
 					layer.prewarmPlanePadding = padding;
 				}
+				else if (layer.layerType == ChunkManagerLayerType.DynamicWgo)
+				{
+					layer.prewarmPlanePadding = movingPadding;
+				}
 			}
 			lastAppliedPadding = padding;
+			lastAppliedMovingPadding = movingPadding;
 		}
 
 		internal static void ResetLayerCache()
 		{
 			lastAppliedPadding = -1f;
+			lastAppliedMovingPadding = -1f;
 		}
 
 		internal static void Clear()
 		{
 			Tracked.Clear();
+			PrewarmThrottle.Clear();
 		}
 
 		internal static void Forget(IChunkableObject obj)
@@ -140,6 +175,7 @@ namespace GK2Performance
 		/// <summary>
 		/// Called before the game shows or hides an object. Keeps already spawned objects inside the band, and spawns new
 		/// ones there while the frame budget allows. Returns true when a spawn is about to happen, so the caller can time it.
+		/// The game only sends "prewarm" for objects inside the band, so those skip the band test.
 		/// </summary>
 		internal static bool Resolve(IChunkableObject obj, ref ChunkVisibilityState state)
 		{
@@ -163,7 +199,8 @@ namespace GK2Performance
 				return false;
 			}
 
-			var inBand = IsInBand(obj);
+			var inBand = (state == ChunkVisibilityState.Prewarm && Mathf.Approximately(lastAppliedPadding, BandPadding))
+				|| IsInBand(obj, BandPadding);
 			if (Tracked.TryGetValue(obj, out entry))
 			{
 				if (inBand)
@@ -186,8 +223,8 @@ namespace GK2Performance
 			return true;
 		}
 
-		/// <summary>True when the object is within the prewarm band around the camera view (same bounds test as the game).</summary>
-		private static bool IsInBand(IChunkableObject obj)
+		/// <summary>True when the object is within the given distance around the camera view (same bounds test as the game).</summary>
+		internal static bool IsInBand(IChunkableObject obj, float padding)
 		{
 			if (planes == null || planes.Length < 6)
 			{
@@ -204,7 +241,6 @@ namespace GK2Performance
 			min.z -= growZ;
 			max.z += growZ;
 
-			var padding = BandPadding;
 			for (var i = 0; i < 6; i++)
 			{
 				var plane = planes[i];
@@ -301,7 +337,7 @@ namespace GK2Performance
 			Tracked.Clear();
 		}
 
-		private static bool IsDeadUnityObject(IChunkableObject obj)
+		internal static bool IsDeadUnityObject(IChunkableObject obj)
 		{
 			if (obj == null)
 			{
@@ -312,45 +348,81 @@ namespace GK2Performance
 		}
 	}
 
+	[PatchGroup(Features.STREAMING, typeof(ChunkStreaming), typeof(PrewarmThrottle), typeof(PrefabWarmer), typeof(GamePools))]
 	[HarmonyPatch(typeof(ChunkManager), "ProcessChunkVisibility")]
 	internal static class ProcessChunkVisibilityPatch
 	{
 		private static void Prefix(ChunkManager __instance)
 		{
-			ChunkStreaming.BeginPass(__instance);
+			if (ChunkStreaming.Broken)
+			{
+				return;
+			}
+			try
+			{
+				ChunkStreaming.BeginPass(__instance);
+			}
+			catch (System.Exception ex)
+			{
+				ChunkStreaming.Fail(ex);
+			}
 		}
 	}
 
+	[PatchGroup(Features.STREAMING, typeof(ChunkStreaming), typeof(PrewarmThrottle), typeof(PrefabWarmer), typeof(GamePools))]
 	[HarmonyPatch(typeof(ChunkManager), "DispatchChunkVisibilityState")]
 	internal static class DispatchChunkVisibilityStatePatch
 	{
-		private static void Prefix(IChunkableObject chunkableObject, ref ChunkVisibilityState state, out bool __state)
+		private const int NO_WORK = 0;
+		private const int OFFSCREEN_WORK = 1;
+		private const int PREWARM_WORK = 2;
+
+		private static void Prefix(IChunkableObject chunkableObject, ref ChunkVisibilityState state, out int __state)
 		{
-			__state = false;
-			if (!Plugin.EnableOptimizations.Value || !Plugin.OffscreenPreload.Value || chunkableObject == null)
+			__state = NO_WORK;
+			if (ChunkStreaming.Broken || !Plugin.EnableOptimizations.Value || chunkableObject == null)
 			{
 				return;
 			}
-			if (!ChunkStreaming.IsEligible(chunkableObject))
+			try
 			{
-				return;
+				var requested = state;
+				if (PrewarmThrottle.Resolve(chunkableObject, ref state))
+				{
+					__state = PREWARM_WORK;
+					PrewarmThrottle.BeginWork();
+					return;
+				}
+				if (state != requested || !Plugin.OffscreenPreload.Value || !ChunkStreaming.IsEligible(chunkableObject))
+				{
+					return;
+				}
+				if (ChunkStreaming.Resolve(chunkableObject, ref state))
+				{
+					__state = OFFSCREEN_WORK;
+					ChunkStreaming.BeginBudgetedWork();
+				}
 			}
-			__state = ChunkStreaming.Resolve(chunkableObject, ref state);
-			if (__state)
+			catch (System.Exception ex)
 			{
-				ChunkStreaming.BeginBudgetedWork();
+				ChunkStreaming.Fail(ex);
 			}
 		}
 
-		private static void Postfix(bool __state)
+		private static void Postfix(int __state)
 		{
-			if (__state)
+			if (__state == OFFSCREEN_WORK)
 			{
 				ChunkStreaming.EndBudgetedWork();
+			}
+			else if (__state == PREWARM_WORK)
+			{
+				PrewarmThrottle.EndWork();
 			}
 		}
 	}
 
+	[PatchGroup(Features.STREAMING, typeof(ChunkStreaming), typeof(PrewarmThrottle), typeof(PrefabWarmer), typeof(GamePools))]
 	[HarmonyPatch(typeof(ChunkManager), nameof(ChunkManager.ClearAll))]
 	internal static class ChunkManagerClearAllPatch
 	{
@@ -360,6 +432,7 @@ namespace GK2Performance
 		}
 	}
 
+	[PatchGroup(Features.STREAMING, typeof(ChunkStreaming), typeof(PrewarmThrottle), typeof(PrefabWarmer), typeof(GamePools))]
 	[HarmonyPatch(typeof(ChunkManager), "TryInit")]
 	internal static class ChunkManagerTryInitPatch
 	{
@@ -370,6 +443,7 @@ namespace GK2Performance
 		}
 	}
 
+	[PatchGroup(Features.STREAMING, typeof(ChunkStreaming), typeof(PrewarmThrottle), typeof(PrefabWarmer), typeof(GamePools))]
 	[HarmonyPatch(typeof(BakedChunkableObjectComponentData), nameof(BakedChunkableObjectComponentData.UpdateChunkVisibility))]
 	internal static class BakedHiddenPatch
 	{
@@ -383,6 +457,7 @@ namespace GK2Performance
 		}
 	}
 
+	[PatchGroup(Features.STREAMING, typeof(ChunkStreaming), typeof(PrewarmThrottle), typeof(PrefabWarmer), typeof(GamePools))]
 	[HarmonyPatch(typeof(ConstructorPart), nameof(ConstructorPart.UpdateChunkVisibility))]
 	internal static class ConstructorPartHiddenPatch
 	{
@@ -396,6 +471,7 @@ namespace GK2Performance
 		}
 	}
 
+	[PatchGroup(Features.STREAMING, typeof(ChunkStreaming), typeof(PrewarmThrottle), typeof(PrefabWarmer), typeof(GamePools))]
 	[HarmonyPatch(typeof(LazyTerrainMeshData), nameof(LazyTerrainMeshData.UpdateChunkVisibility))]
 	internal static class TerrainHiddenPatch
 	{
@@ -408,6 +484,7 @@ namespace GK2Performance
 		}
 	}
 
+	[PatchGroup(Features.STREAMING, typeof(ChunkStreaming), typeof(PrewarmThrottle), typeof(PrefabWarmer), typeof(GamePools))]
 	[HarmonyPatch(typeof(ChunkableObjectComponent), nameof(ChunkableObjectComponent.UpdateChunkVisibility))]
 	internal static class SceneObjectHiddenPatch
 	{

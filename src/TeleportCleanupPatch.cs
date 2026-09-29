@@ -22,13 +22,20 @@ namespace GK2Performance
 			{
 				return;
 			}
-			var destination = teleportData.GetDestinationSceneData();
-			var currentSceneId = MainGame.PlayerData?.currentGameSceneId;
-			var isCrossScene = destination != null && currentSceneId != destination.id;
-			if (!isCrossScene)
+			try
 			{
-				sameSceneTeleportPending = true;
-				flaggedAt = Time.realtimeSinceStartup;
+				var destination = teleportData.GetDestinationSceneData();
+				var currentSceneId = MainGame.PlayerData?.currentGameSceneId;
+				var isCrossScene = destination != null && currentSceneId != destination.id;
+				if (!isCrossScene)
+				{
+					sameSceneTeleportPending = true;
+					flaggedAt = Time.realtimeSinceStartup;
+				}
+			}
+			catch (System.Exception ex)
+			{
+				Plugin.Log.LogWarning($"Door cleanup skip not applied: {ex.GetBaseException().Message}");
 			}
 		}
 
@@ -44,6 +51,7 @@ namespace GK2Performance
 		}
 	}
 
+	[PatchGroup(Features.LOCAL_TELEPORT, typeof(TeleportCleanup))]
 	[HarmonyPatch(typeof(PlayerController), nameof(PlayerController.Teleport))]
 	internal static class TeleportPatch
 	{
@@ -54,14 +62,16 @@ namespace GK2Performance
 		}
 	}
 
+	[PatchGroup(Features.LOCAL_TELEPORT, typeof(TeleportCleanup))]
 	[HarmonyPatch(typeof(MainGame), nameof(MainGame.HiddenOptimization))]
 	internal static class HiddenOptimizationPatch
 	{
-		/// <summary>Skips the memory cleanup right after a same-area teleport.</summary>
+		/// <summary>Replaces the slow memory cleanup after a same-area teleport with a quick garbage collection.</summary>
 		private static bool Prefix(ref UniTask __result)
 		{
 			if (TeleportCleanup.ShouldSkip())
 			{
+				HiddenGarbageCollection.Run(HiddenGarbageCollection.DOOR_BUDGET_MS);
 				__result = UniTask.CompletedTask;
 				return false;
 			}

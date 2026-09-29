@@ -1,15 +1,28 @@
+using System;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
 namespace GK2Performance
 {
-	/// <summary>Drives the per-frame work of all features.</summary>
+	/// <summary>Drives the per-frame work of all features. A feature that throws is switched off on its own.</summary>
 	internal class PerfRunner : MonoBehaviour
 	{
 		private const float SWEEP_INTERVAL_SECONDS = 1f;
 
+		private sealed class Job
+		{
+			public string Name;
+			public string Group;
+			public Action Run;
+			public bool Failed;
+		}
+
 		private float sweepTimer;
 		private bool wasActive;
+
+		private Job[] updateJobs;
+		private Job[] sweepJobs;
+		private Job[] lateJobs;
 
 		internal static void Create()
 		{
@@ -17,6 +30,41 @@ namespace GK2Performance
 			go.hideFlags = HideFlags.HideAndDontSave;
 			DontDestroyOnLoad(go);
 			go.AddComponent<PerfRunner>();
+		}
+
+		private void Awake()
+		{
+			updateJobs = new[]
+			{
+				NewJob("camera smoothing", null, CameraMenuSmoothing.Tick),
+				NewJob("No More Running Back queue", null, NotepadRebuild.Tick),
+				NewJob("prefab warm-up", Features.STREAMING, PrefabWarmer.Sweep),
+				NewJob("world preload", Features.PRELOAD_WORLD, WorldPreloader.Tick),
+				NewJob("menu prefetch", null, TickMenus),
+				NewJob("loading screen", Features.HOLD_LOADING_SCREEN, LoadingScreenHold.Tick)
+			};
+			sweepJobs = new[]
+			{
+				NewJob("off-screen decor", Features.STREAMING, ChunkStreaming.Sweep),
+				NewJob("prewarm band", Features.STREAMING, PrewarmThrottle.Sweep)
+			};
+			lateJobs = new[]
+			{
+				NewJob("No More Running Back chest redraw", Features.NOTEPAD_CHEST_REDRAW, NotepadChestRedraw.LateTick)
+			};
+		}
+
+		private static Job NewJob(string name, string group, Action run)
+		{
+			return new Job { Name = name, Group = group, Run = run };
+		}
+
+		private static void TickMenus()
+		{
+			var worldRunning = PatchGroups.IsActive(Features.STREAMING) && ChunkStreaming.RanRecently;
+			var preloading = PatchGroups.IsActive(Features.PRELOAD_WORLD) && WorldPreloader.IsBusy;
+			UiWindowPrefetch.Tick(worldRunning && !preloading);
+			WindowPrecreate.Tick();
 		}
 
 		private void OnEnable()
@@ -32,7 +80,10 @@ namespace GK2Performance
 
 		private void OnSceneUnloaded(Scene scene)
 		{
-			ChunkStreaming.Clear();
+			if (PatchGroups.IsActive(Features.STREAMING))
+			{
+				ChunkStreaming.Clear();
+			}
 		}
 
 		private static bool IsStreamingActive()
@@ -40,39 +91,58 @@ namespace GK2Performance
 			return Plugin.EnableOptimizations.Value && Plugin.OffscreenPreload.Value;
 		}
 
+		private static void RunAll(Job[] jobs)
+		{
+			foreach (var job in jobs)
+			{
+				if (job.Failed || (job.Group != null && !PatchGroups.IsActive(job.Group)))
+				{
+					continue;
+				}
+				try
+				{
+					job.Run();
+				}
+				catch (Exception ex)
+				{
+					job.Failed = true;
+					Plugin.Log.LogWarning($"Switched off {job.Name}: {ex.GetBaseException().Message}");
+				}
+			}
+		}
+
 		/// <summary>Runs each feature's per-frame work. Features switched off at runtime hand their objects back to the game.</summary>
 		private void Update()
 		{
 			var active = IsStreamingActive();
-			if (wasActive && !active)
+			if (wasActive && !active && PatchGroups.IsActive(Features.STREAMING))
 			{
 				ChunkStreaming.ReleaseAllHeld();
 			}
 			wasActive = active;
 
-			CameraMenuSmoothing.Tick();
-			NotepadRebuild.Tick();
-			PrefabWarmer.Sweep();
-			WorldPreloader.Tick();
-			UiWindowPrefetch.Tick(ChunkStreaming.RanRecently && !WorldPreloader.IsBusy);
+			RunAll(updateJobs);
 
 			sweepTimer += Time.unscaledDeltaTime;
 			if (sweepTimer >= SWEEP_INTERVAL_SECONDS)
 			{
 				sweepTimer = 0f;
-				ChunkStreaming.Sweep();
+				RunAll(sweepJobs);
 			}
 		}
 
 		/// <summary>Runs after every script's Update, so it sees what they changed this frame.</summary>
 		private void LateUpdate()
 		{
-			NotepadChestRedraw.LateTick();
+			RunAll(lateJobs);
 		}
 
 		private void OnDestroy()
 		{
-			PrefabWarmer.ReleaseAll();
+			if (PatchGroups.IsActive(Features.STREAMING))
+			{
+				PrefabWarmer.ReleaseAll();
+			}
 		}
 	}
 }
