@@ -76,9 +76,12 @@ Graveyard Keeper 2
 [size=4][b]Uninstall[/b][/size]
 Delete [i]BepInEx\plugins\GK2Performance[/i].
 
-[size=4][b]Source code[/b][/size]
-The full source is on GitHub:
-[url=https://github.com/kevinsnijder/GK2-Performance-Fixes]github.com/kevinsnijder/GK2-Performance-Fixes[/url]
+[size=4][b]Links[/b][/size]
+[list]
+[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3809616755]Steam Workshop page[/url][/*]
+[*][url=https://github.com/kevinsnijder/GK2-Performance-Fixes]Source code on GitHub[/url][/*]
+[/list]
+Please report problems in the comments; attach [i]BepInEx\LogOutput.log[/i] if you can.
 
 [size=4][b]Changelog[/b][/size]
 [b]v1.1.0[/b]: no hitches right after loading (the loading screen stays up until everything is loaded); buildings, trees and NPCs near the screen load a little at a time and NPCs load before they walk into view; no freeze the first time a worker starts a craft; garbage collection during door fades; no knock-on hitch after a slow frame; inventory window and chest item cells prepared in advance; a game update only turns off the affected fix

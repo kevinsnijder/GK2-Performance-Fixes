@@ -5,7 +5,7 @@ I have not doublechecked every line of code in this repository.
 
 <img src="workshop/preview.png" alt="Performance Fixes" width="160" align="right">
 
-**Download:** [Steam Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=3809616755) · [Nexus Mods](https://www.nexusmods.com/graveyardkeeper2/mods/211)
+**Links:** [Steam Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=3809616755) · [Nexus Mods](https://www.nexusmods.com/graveyardkeeper2/mods/211) · [Source code](https://github.com/kevinsnijder/GK2-Performance-Fixes)
 
 A BepInEx 5 mod for **Graveyard Keeper 2** that removes stutter and freezes while walking, using doors, meeting NPCs and workers, and opening menus. It doesn't change how the game looks or plays, and it never touches your save files.
 

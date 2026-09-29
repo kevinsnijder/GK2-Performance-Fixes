@@ -90,8 +90,12 @@ Graveyard Keeper 2
 [h2]Uninstall[/h2]
 Unsubscribe, and delete [i]BepInEx\plugins\GK2Performance[/i] if you installed manually.
 
-[h2]About[/h2]
-Made with Claude Opus 5.5. Please report problems in the comments; attach [i]BepInEx\LogOutput.log[/i] if you can.
+[h2]Links[/h2]
+[list]
+[*][url=https://www.nexusmods.com/graveyardkeeper2/mods/211]Nexus Mods page[/url]
+[*][url=https://github.com/kevinsnijder/GK2-Performance-Fixes]Source code on GitHub[/url]
+[/list]
+Please report problems in the comments; attach [i]BepInEx\LogOutput.log[/i] if you can.
 
 [h2]Changelog[/h2]
 [b]v1.1.0[/b]: no hitches right after loading (the loading screen stays up until everything is loaded); buildings, trees and NPCs near the screen load a little at a time and NPCs load before they walk into view; no freeze the first time a worker starts a craft; garbage collection during door fades; no knock-on hitch after a slow frame; inventory window and chest item cells prepared in advance; a game update only turns off the affected fix
