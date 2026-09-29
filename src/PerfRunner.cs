@@ -37,7 +37,6 @@ namespace GK2Performance
 			updateJobs = new[]
 			{
 				NewJob("camera smoothing", null, CameraMenuSmoothing.Tick),
-				NewJob("No More Running Back queue", null, NotepadRebuild.Tick),
 				NewJob("prefab warm-up", Features.STREAMING, PrefabWarmer.Sweep),
 				NewJob("world preload", Features.PRELOAD_WORLD, WorldPreloader.Tick),
 				NewJob("menu prefetch", null, TickMenus),
@@ -50,7 +49,7 @@ namespace GK2Performance
 			};
 			lateJobs = new[]
 			{
-				NewJob("No More Running Back chest redraw", Features.NOTEPAD_CHEST_REDRAW, NotepadChestRedraw.LateTick),
+				NewJob("No More Running Back chest redraw", null, NotepadChestRedraw.LateTick),
 				NewJob("back light", null, BackLightFixes.LateTick)
 			};
 		}

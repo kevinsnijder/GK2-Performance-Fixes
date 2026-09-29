@@ -15,7 +15,7 @@ This mod tries to remove those hitches without changing how the game plays, and 
 [*][b]Instant pause menu:[/b] the ~0.5 s delay on Esc is gone (this disables the bug reporter and hides its button)[/*]
 [*][b]Faster menus:[/b] menus, the inventory window and the item cells for big chests are prepared in advance[/*]
 [*][b]Steady camera:[/b] opening a chest while walking no longer makes the camera jump[/*]
-[*][b]Smoother chests with [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3806668942]No More Running Back[/url]:[/b] no ~0.25 s freeze when a chest opens in a big storage area like the yard, and no second hitch right after[/*]
+[*][b]Smoother chests with [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3806668942]No More Running Back[/url]:[/b] no ~0.25 s freeze when a chest opens in a big storage area like the yard[/*]
 [*][b]Higher frame rate outdoors:[/b] the game's back light (a second sun pointing upward) no longer draws every object a second time; its faint bluish rim light is blended into the normal lighting instead. Set [i]BackLight[/i] to Normal for the game's exact look, or Off for the most speed[/*]
 [*]Less CPU wasted on the game's log messages[/*]
 [/list]
@@ -86,6 +86,7 @@ Delete [i]BepInEx\plugins\GK2Performance[/i].
 Please report problems in the comments; attach [i]BepInEx\LogOutput.log[/i] if you can.
 
 [size=4][b]Changelog[/b][/size]
+[b]v1.1.2[/b]: works with No More Running Back 1.6.0: the chest speed-up no longer patches any game code, so No More Running Back no longer lists this mod as a shared hook; the fix for the second hitch after opening a chest was removed, because No More Running Back 1.6.0 fixed that itself
 [b]v1.1.1[/b]: higher frame rate outdoors (the back light no longer draws every object twice, about 92 → 110 fps in the yard); the off-screen loading does less work every frame, most of all while standing still
 [b]v1.1.0[/b]: no hitches right after loading (the loading screen stays up until everything is loaded); buildings, trees and NPCs near the screen load a little at a time and NPCs load before they walk into view; no freeze the first time a worker starts a craft; garbage collection during door fades; no knock-on hitch after a slow frame; inventory window and chest item cells prepared in advance; a game update only turns off the affected fix
 [b]v1.0.3[/b]: with No More Running Back, no ~0.25 s freeze when opening a chest in a big storage area like the yard

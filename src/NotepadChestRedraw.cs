@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Reflection;
 using HarmonyLib;
 using LazyBearTechnology;
@@ -21,6 +20,7 @@ namespace GK2Performance
 		private static readonly FieldInfo LeftSideField = AccessTools.Field(typeof(UIBaseChestWindow), "leftMultiInventoryWidget");
 		private static readonly FieldInfo RightSideField = AccessTools.Field(typeof(UIBaseChestWindow), "rightMultiInventoryWidget");
 		private static readonly MethodInfo OnInventoryRedrawMethod = AccessTools.Method(typeof(MultiInventoryWidget), "OnInventoryRedraw");
+		private static readonly FieldInfo OnRedrawField = AccessTools.Field(typeof(InventoryWidget), "onRedraw");
 
 		private static bool resolved;
 		private static bool unavailable;
@@ -31,12 +31,9 @@ namespace GK2Performance
 		private static bool chestWindowChanged;
 		private static MonoBehaviour pendingFor;
 
-		internal static bool Batching;
-		internal static readonly List<MultiInventoryWidget> BatchedWidgets = new List<MultiInventoryWidget>();
-
 		internal static void Init()
 		{
-			if (LeftSideField == null || RightSideField == null || OnInventoryRedrawMethod == null)
+			if (LeftSideField == null || RightSideField == null || OnInventoryRedrawMethod == null || OnRedrawField?.FieldType != typeof(Action))
 			{
 				Plugin.Log.LogWarning("No More Running Back chest speed-up disabled: chest window layout changed");
 				return;
@@ -175,56 +172,67 @@ namespace GK2Performance
 			{
 				return;
 			}
-			BatchedWidgets.Clear();
-			Batching = true;
-			try
+			var sides = new[] { LeftSideField.GetValue(window) as MultiInventoryWidget, RightSideField.GetValue(window) as MultiInventoryWidget };
+			var needsLayout = new bool[sides.Length];
+			for (var i = 0; i < sides.Length; i++)
 			{
-				foreach (var side in new[] { LeftSideField, RightSideField })
+				if (sides[i] == null)
 				{
-					if (!(side.GetValue(window) is MultiInventoryWidget multi))
+					continue;
+				}
+				foreach (var inventory in sides[i].DrawnInventories)
+				{
+					if (inventory != null && RedrawWithoutLayout(inventory, sides[i]))
 					{
-						continue;
-					}
-					foreach (var inventory in multi.DrawnInventories)
-					{
-						if (inventory != null)
-						{
-							inventory.Redraw();
-						}
+						needsLayout[i] = true;
 					}
 				}
+			}
+			for (var i = 0; i < sides.Length; i++)
+			{
+				if (needsLayout[i] && sides[i] != null)
+				{
+					OnInventoryRedrawMethod.Invoke(sides[i], null);
+				}
+			}
+		}
+
+		/// <summary>
+		/// Redraws one storage with the window's layout handler taken out of its redraw event, so every other listener
+		/// still runs. Returns whether the layout handler was taken out.
+		/// </summary>
+		private static bool RedrawWithoutLayout(InventoryWidget inventory, MultiInventoryWidget multi)
+		{
+			var original = OnRedrawField.GetValue(inventory) as Action;
+			var stripped = original;
+			Delegate layout = null;
+			if (original != null)
+			{
+				foreach (var handler in original.GetInvocationList())
+				{
+					if (handler.Target == (object)multi && handler.Method == OnInventoryRedrawMethod)
+					{
+						stripped = (Action)Delegate.Remove(stripped, handler);
+						layout = Delegate.Combine(layout, handler);
+					}
+				}
+			}
+			if (layout == null)
+			{
+				inventory.Redraw();
+				return false;
+			}
+			OnRedrawField.SetValue(inventory, stripped);
+			try
+			{
+				inventory.Redraw();
 			}
 			finally
 			{
-				Batching = false;
+				var current = OnRedrawField.GetValue(inventory) as Action;
+				OnRedrawField.SetValue(inventory, current == stripped ? original : Delegate.Combine(current, layout));
 			}
-			foreach (var multi in BatchedWidgets)
-			{
-				if (multi != null)
-				{
-					OnInventoryRedrawMethod.Invoke(multi, null);
-				}
-			}
-			BatchedWidgets.Clear();
-		}
-	}
-
-	[PatchGroup(Features.NOTEPAD_CHEST_REDRAW, typeof(NotepadChestRedraw))]
-	[HarmonyPatch(typeof(MultiInventoryWidget), "OnInventoryRedraw")]
-	internal static class MultiInventoryRedrawPatch
-	{
-		/// <summary>While the mod redraws a chest window, only notes which side needs the layout pass.</summary>
-		private static bool Prefix(MultiInventoryWidget __instance)
-		{
-			if (!NotepadChestRedraw.Batching)
-			{
-				return true;
-			}
-			if (!NotepadChestRedraw.BatchedWidgets.Contains(__instance))
-			{
-				NotepadChestRedraw.BatchedWidgets.Add(__instance);
-			}
-			return false;
+			return true;
 		}
 	}
 }

@@ -16,7 +16,7 @@ namespace GK2Performance
 	{
 		public const string PluginGuid = "gk2.performance";
 		public const string PluginName = "GK2 Performance";
-		public const string PluginVersion = "1.1.1";
+		public const string PluginVersion = "1.1.2";
 
 		internal static ManualLogSource Log;
 
@@ -33,7 +33,6 @@ namespace GK2Performance
 		internal static ConfigEntry<bool> SmoothPlayerMotion;
 		internal static ConfigEntry<bool> DisableBugReporter;
 		internal static ConfigEntry<bool> PrefetchMenus;
-		internal static ConfigEntry<bool> SkipNotepadRebuild;
 		internal static ConfigEntry<bool> BatchNotepadChestRedraw;
 		internal static ConfigEntry<bool> SmoothCameraOnMenuOpen;
 		internal static ConfigEntry<float> PreloadBudgetMs;
@@ -74,7 +73,6 @@ namespace GK2Performance
 
 			PerfRunner.Create();
 			CameraMenuSmoothing.Init();
-			NotepadRebuild.Init();
 			NotepadChestRedraw.Init();
 			Log.LogInfo($"{PluginName} {PluginVersion} loaded. Optimizations {(EnableOptimizations.Value ? "ON" : "OFF")}.");
 		}
@@ -119,10 +117,6 @@ namespace GK2Performance
 
 			PrefetchMenus = Config.Bind("Menus", "PrefetchMenus", true,
 				"After the world has loaded, load all UI window prefabs in the background so menus don't hit the disk the first time they open.");
-
-			SkipNotepadRebuild = Config.Bind("Menus", "SkipNotepadRebuild", true,
-				"For the \"No More Running Back\" Workshop mod: its queue next to chests is built twice every time a chest opens (a second hitch). " +
-				"Skip the repeat when the queue was just built. Does nothing without that mod.");
 
 			BatchNotepadChestRedraw = Config.Bind("Menus", "BatchNotepadChestRedraw", true,
 				"For the \"No More Running Back\" Workshop mod: its chest lock feature redraws a chest window one storage at a time, and the game " +

@@ -32,10 +32,9 @@ A BepInEx 5 mod for **Graveyard Keeper 2** that removes stutter and freezes whil
 | The game's back light, a second sun pointing upward, draws every object it touches once more (about a fifth of the frame time outdoors) for a faint bluish rim on tree leaves and some walls | `Soft` (default): the same light is added to the normal lighting pass instead. It looks almost the same, only a little softer. `Off` turns it off with the game's own switch | `BackLight` |
 | With `BackLight = Normal`: the back light can never reach the ground, yet the ground is drawn once more for it every frame (about 200 extra draw calls outdoors) | The ground skips that pass; every other light and camera sees it exactly as before | `SkipBackLightOnTerrain` |
 | CPU wasted on the game's many log messages | Stops recording where each info or warning message came from; errors still do | `DisableInfoStackTraces` |
-| With [No More Running Back](https://steamcommunity.com/sharedfiles/filedetails/?id=3806668942): a second hitch right after a chest opens, because its queue next to chests is built twice | Skips the repeat when the queue was just built | `SkipNotepadRebuild` |
 | With [No More Running Back](https://steamcommunity.com/sharedfiles/filedetails/?id=3806668942): ~0.25 s freeze when opening a chest in a big storage area like the yard (21 storages) | Redraws the chest window in one go instead of one storage at a time (270 ms → 35 ms) | `BatchNotepadChestRedraw` |
 
-The last two only do something when No More Running Back is installed. Without it, the mod works the same and those two settings have no effect.
+The last one only does something when No More Running Back is installed. Without it, the mod works the same and that setting has no effect.
 
 All time budgets are in milliseconds per frame, so they work the same on fast and slow PCs: a slower PC takes a few more frames for the same work instead of freezing longer.
 
@@ -115,7 +114,6 @@ Graveyard Keeper 2
 | Menus | `DisableBugReporter` | `true` | No screenshot delay on Esc; turns off the bug reporter. |
 | Menus | `PrefetchMenus` | `true` | Load all menus in the background. |
 | Menus | `PrecreateWindows` | `true` | Create the inventory window and the item cells behind the loading screen. |
-| Menus | `SkipNotepadRebuild` | `true` | No More Running Back: build the chest queue once instead of twice. |
 | Menus | `BatchNotepadChestRedraw` | `true` | No More Running Back: redraw the chest window in one go. |
 | Logging | `DisableInfoStackTraces` | `true` | Cheaper log messages. |
 | Lighting | `BackLight` | `Soft` | `Normal`: as in the game. `Soft`: blended into the normal lighting, much faster outdoors, looks almost the same. `Off`: no back light, fastest. |
@@ -134,10 +132,9 @@ Tested with [No More Running Back](https://steamcommunity.com/sharedfiles/filede
 
 No More Running Back switches itself off when another mod patches its code. This mod never patches it; it only reads and sets a few of its values and patches the game's own code instead. The mod doesn't patch any method that the other tested mods patch.
 
-## How the No More Running Back fixes work
+## How the No More Running Back fix works
 
-- **Chest queue built twice:** when a chest opens, the queue next to it is built, and built again two frames later. If the first build just happened, the second is cancelled. The first open of a chest window always keeps both.
-- **Chest window freeze:** after a chest window opens or closes, the mod's chest lock feature redraws every storage in the window one by one. After each one the game lays out the whole window again, which is 22 full layout passes in the yard. This mod takes over that redraw: the same storages are redrawn in the same order, and the layout runs once at the end. The window and the queue look exactly the same.
+- **Chest window freeze:** after a chest window opens or closes, the mod's chest lock feature redraws every storage in the window one by one. After each one the game lays out the whole window again, which is 22 full layout passes in the yard. This mod takes over that redraw: the same storages are redrawn in the same order, and the layout runs once at the end. It does this without patching anything: during the redraw it takes only the layout step out of each storage's redraw event and puts it back afterwards, so No More Running Back's own listeners still run. The window and the queue look exactly the same.
 
 ## Building
 
@@ -155,6 +152,9 @@ The DLL ends up in `bin/Release/GK2Performance.dll`. `nuget.config` pins nuget.o
 
 ## Changelog
 
+- **1.1.2:** Works with No More Running Back 1.6.0:
+  - The chest speed-up no longer patches any game code, so No More Running Back no longer lists this mod as a shared hook in its status.
+  - Removed the fix for the second hitch after opening a chest (`SkipNotepadRebuild`): No More Running Back 1.6.0 fixed it itself.
 - **1.1.1:**
   - Higher frame rate outdoors: the back light no longer draws every object a second time. About 92 → 110 fps in the yard by day.
   - The off-screen loading does less work every frame, most of all while standing still (about 0.2 ms per frame less in the yard).

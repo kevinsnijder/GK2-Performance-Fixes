@@ -15,7 +15,6 @@ namespace GK2Performance
 		internal const string PLAYER_MOTION = "SmoothPlayerMotion";
 		internal const string LOCAL_TELEPORT = "SkipCleanupOnLocalTeleport";
 		internal const string BUG_REPORTER = "DisableBugReporter";
-		internal const string NOTEPAD_CHEST_REDRAW = "BatchNotepadChestRedraw";
 		internal const string WORLD_UPDATES = "SmoothWorldUpdates";
 		internal const string TERRAIN_BACK_LIGHT = "SkipBackLightOnTerrain";
 	}
