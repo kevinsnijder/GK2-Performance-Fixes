@@ -5,8 +5,8 @@ using UnityEngine;
 namespace GK2Performance
 {
 	/// <summary>
-	/// Doors and stairs make the game free unused memory (0.5-0.8 s freeze). When the door leads to the same area there
-	/// is nothing new to free, so that step is skipped. Other area changes, sleeping and loading keep it.
+	/// Doors and stairs make the game free unused memory, which freezes for 0.5-0.8 s.
+	/// For doors within the same area there is nothing new to free, so that step is skipped.
 	/// </summary>
 	internal static class TeleportCleanup
 	{

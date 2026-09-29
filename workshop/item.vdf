@@ -2,13 +2,13 @@
 {
 	"appid"		"4358690"
 	"publishedfileid"		"3809616755"
-	"contentfolder"		"C:\Users\kevin\Downloads\Mods\GK2-Performance-Fixes\workshop\content"
-	"previewfile"		"C:\Users\kevin\Downloads\Mods\GK2-Performance-Fixes\workshop\preview.png"
+	"contentfolder"		"D:\Projects\Persoonlijk\Graveyard Keeper II\Performance Fixes\workshop\content"
+	"previewfile"		"D:\Projects\Persoonlijk\Graveyard Keeper II\Performance Fixes\workshop\preview.png"
 	"visibility"		"0"
 	"title"		"Performance Fixes"
-	"changenote"		"v1.1.0: much less stutter. No more hitches in the first seconds after loading (the loading screen stays up about 5 s longer until everything is loaded). Buildings, trees and NPCs near the screen now load a little at a time instead of all in one frame, and NPCs load before they walk into view. No freeze the first time a worker starts a craft near you. Garbage collection mostly happens during door fades now. A slow frame no longer makes the next one slow too. The inventory window and item cells for big chests are prepared behind the loading screen. A game update now only turns off the fix it affects instead of the whole mod."
+	"changenote"		"v1.1.1: higher frame rate outdoors: the game's back light no longer draws every object a second time; its rim light is blended into the normal lighting instead (about 92 → 110 fps in the yard by day; set BackLight = Normal for the game's exact look). The off-screen loading also does less work every frame, most of all while standing still."
 	"description"		"Walking judders, doors freeze the game, NPCs pop in and opening a chest stutters?
-This mod removes those hitches without changing how the game looks or plays.
+This mod removes those hitches without changing how the game plays, and draws outdoor areas faster.
 
 ⚠️ [b]This might not make it better for your system, maybe it even makes the stuttering worse. Every system is different and unfortunately I only have 1 system to debug and make traces on.[/b] ⚠️
 
@@ -25,6 +25,7 @@ This mod removes those hitches without changing how the game looks or plays.
 [*][b]Faster menus:[/b] menus, the inventory window and the item cells for big chests are prepared in advance
 [*][b]Steady camera:[/b] opening a chest while walking no longer makes the camera jump
 [*][b]Smoother chests with [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3806668942]No More Running Back[/url]:[/b] no freeze when a chest opens in a big storage area, and no second hitch right after
+[*][b]Higher frame rate outdoors:[/b] the game's back light (a second sun pointing upward) no longer draws every object a second time; its faint bluish rim light is blended into the normal lighting instead. Set [i]BackLight[/i] to Normal for the game's exact look, or Off for the most speed
 [*]Less CPU wasted on the game's log messages
 [/list]
 All time budgets are per frame, so slower PCs spread the work over a few more frames instead of freezing longer.
@@ -37,13 +38,14 @@ Same save, same scripted run (walk through the village and port, doors, chests, 
 [*]Walking: frames over twice the usual frame time 36 → 6, frames over 25 ms 5 → 2
 [*]Yard chest (21 storages): 284 ms → 177 ms
 [*]Worker starting a craft near you: ~45 ms → no hitch
+[*]Frame rate in the yard: 92 → 110 fps by day, 74 → 79 fps at night
 [/list]
 
 [h2]Not fixed[/h2]
 [list]
 [*]The game streams every sound from disk; starting some sounds costs ~10 ms, which a mod can't change
 [*]With No More Running Back, the first chest of a session still takes ~0.3 s (first draw of the window plus that mod's setup)
-[*]Busy areas like the yard are limited by rendering; the mod doesn't change graphics
+[*]Busy areas like the yard are still limited by rendering: the game draws every object once per light that touches it
 [/list]
 
 [h2]Compatibility[/h2]
@@ -55,7 +57,7 @@ Same save, same scripted run (walk through the village and port, doors, chests, 
 [h2]Safety[/h2]
 [list]
 [*]Never reads or writes save data; add or remove it at any time, including mid-save
-[*]No visual changes
+[*]The only visual change is the back light's softer rim light ([i]BackLight = Soft[/i], the default); set it to Normal for the game's exact picture
 [*]If a game update changes something one fix relies on, only that fix switches off and the rest keep working
 [/list]
 
@@ -98,6 +100,7 @@ Unsubscribe, and delete [i]BepInEx\plugins\GK2Performance[/i] if you installed m
 Please report problems in the comments; attach [i]BepInEx\LogOutput.log[/i] if you can.
 
 [h2]Changelog[/h2]
+[b]v1.1.1[/b]: higher frame rate outdoors (the back light no longer draws every object twice, about 92 → 110 fps in the yard); the off-screen loading does less work every frame, most of all while standing still
 [b]v1.1.0[/b]: no hitches right after loading (the loading screen stays up until everything is loaded); buildings, trees and NPCs near the screen load a little at a time and NPCs load before they walk into view; no freeze the first time a worker starts a craft; garbage collection during door fades; no knock-on hitch after a slow frame; inventory window and chest item cells prepared in advance; a game update only turns off the affected fix
 [b]v1.0.3[/b]: with No More Running Back, no ~0.25 s freeze when opening a chest in a big storage area like the yard
 [b]v1.0.2[/b]: with No More Running Back, no second hitch right after a chest opens

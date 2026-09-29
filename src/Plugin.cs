@@ -8,15 +8,15 @@ using UnityEngine;
 namespace GK2Performance
 {
 	/// <summary>
-	/// Performance fixes for Graveyard Keeper 2. Everything happens in memory; nothing is written to save files,
-	/// so removing the DLL restores the unmodded game.
+	/// Performance fixes for Graveyard Keeper 2.
+	/// Nothing is written to save files, so removing the DLL restores the game.
 	/// </summary>
 	[BepInPlugin(PluginGuid, PluginName, PluginVersion)]
 	public class Plugin : BaseUnityPlugin
 	{
 		public const string PluginGuid = "gk2.performance";
 		public const string PluginName = "GK2 Performance";
-		public const string PluginVersion = "1.1.0";
+		public const string PluginVersion = "1.1.1";
 
 		internal static ManualLogSource Log;
 
@@ -46,10 +46,12 @@ namespace GK2Performance
 		internal static ConfigEntry<bool> SmoothWorldUpdates;
 		internal static ConfigEntry<bool> PrepareManagers;
 		internal static ConfigEntry<bool> CollectGarbageWhenHidden;
+		internal static ConfigEntry<bool> SkipBackLightOnTerrain;
+		internal static ConfigEntry<BackLightMode> BackLight;
 
 		private Harmony harmony;
 
-		/// <summary>Loads the settings and applies the patches. A feature whose patch no longer fits the game is left out on its own.</summary>
+		/// <summary>Loads the settings and applies the patches. A feature whose patch no longer fits the game is left out.</summary>
 		private void Awake()
 		{
 			Log = Logger;
@@ -180,6 +182,16 @@ namespace GK2Performance
 			SkipCleanupOnLocalTeleport = Config.Bind("Streaming", "SkipCleanupOnLocalTeleport", true,
 				"Doors/stairs that stay in the same area make the game run UnloadUnusedAssets + a full GC behind the fade " +
 				"(0.5-0.8 s freeze). Skip it for same-area teleports. Cross-area teleports, sleeping and loading keep the vanilla cleanup.");
+
+			SkipBackLightOnTerrain = Config.Bind("Lighting", "SkipBackLightOnTerrain", true,
+				"The game's second sun light (the back light) points upward, so it never lights the ground, yet the game still draws " +
+				"the ground an extra time for it every frame. Skip that extra pass for the ground only. The picture stays exactly the same. " +
+				"Only used with BackLight = Normal.");
+
+			BackLight = Config.Bind("Lighting", "BackLight", BackLightMode.Soft,
+				"The game's back light adds a faint bluish rim to tree leaves and some walls, but draws every object once more (about a fifth of " +
+				"the frame time outdoors). Normal: as in the game. Soft: the same bluish light, blended into the normal lighting pass; " +
+				"softer and more even instead of crisp rims. Off: no back light. This is the only setting that changes the picture.");
 		}
 
 		private void OnStackTraceSettingChanged(object sender, EventArgs e)

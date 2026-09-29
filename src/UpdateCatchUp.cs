@@ -7,9 +7,8 @@ using UnityEngine;
 namespace GK2Performance
 {
 	/// <summary>
-	/// The game runs crafting, conveyors, NPC life and other world logic in fixed steps (every 0.04 s, 0.2 s, 1 s, ...).
-	/// After a slow frame it runs all missed steps at once, which makes the next frame slow as well. Here a frame runs at
-	/// most one step more than usual; the rest carries over to the next frames. No game time is lost or added.
+	/// After a slow frame the game runs all missed world logic steps at once, so the next frame is slow too.
+	/// Here a frame runs at most one extra step; the rest follows in the next frames. No game time is lost.
 	/// </summary>
 	internal static class UpdateCatchUp
 	{
@@ -32,7 +31,7 @@ namespace GK2Performance
 			}
 		}
 
-		/// <summary>Runs before the game's UpdateManager.Update and moves surplus step time into the carry-over.</summary>
+		/// <summary>Runs before the game's world update and moves surplus step time into the carry-over.</summary>
 		internal static void BeforeUpdate(UpdateManager manager)
 		{
 			var dt = Time.deltaTime;
@@ -71,7 +70,7 @@ namespace GK2Performance
 			}
 		}
 
-		/// <summary>Lets this frame run the usual number of steps plus one; the rest waits for the next frames.</summary>
+		/// <summary>Lets this frame run its usual steps plus one; the rest waits.</summary>
 		private static void Limit(ScheduledUpdate scheduled, float added, float typicalAdded)
 		{
 			var interval = scheduled.updateInterval;

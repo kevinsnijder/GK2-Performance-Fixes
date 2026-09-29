@@ -9,8 +9,8 @@ using UnityEngine.ResourceManagement.AsyncOperations;
 namespace GK2Performance
 {
 	/// <summary>
-	/// Access to the game's own object pools. The pools are read from their private fields, because the public
-	/// getters search the scene or even create a pool when there is none.
+	/// Access to the game's object pools, read from private fields.
+	/// The public getters search the scene or even create a pool.
 	/// </summary>
 	internal static class GamePools
 	{
@@ -98,7 +98,7 @@ namespace GK2Performance
 			return owner != null ? WgoHandlesRef(owner) : null;
 		}
 
-		/// <summary>Starts the game's own async pool creation (prefab load + initial pool size).</summary>
+		/// <summary>Starts the game's own async pool creation.</summary>
 		internal static void StartBakedPoolAsync(string path)
 		{
 			BakedCreateAsync(Baked, path).Forget();
@@ -109,7 +109,7 @@ namespace GK2Performance
 			ConstructorCreateAsync(Constructor, path).Forget();
 		}
 
-		/// <summary>Starts the game's own async WGO prefab load; the handle is stored in the game's cache.</summary>
+		/// <summary>Starts the game's own async prefab load for a world object.</summary>
 		internal static void StartWgoPrefabLoad(string key)
 		{
 			WgoLoadAsync(Wgo, key);

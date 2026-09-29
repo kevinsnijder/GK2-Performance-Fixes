@@ -8,10 +8,8 @@ using UnityEngine;
 namespace GK2Performance
 {
 	/// <summary>
-	/// Many of the game's managers are found the first time they are used, by searching every object in the game
-	/// (tens of milliseconds), and some are created at that moment. A few settings files are loaded from disk on first use.
-	/// Behind the loading screen, managers that already exist are linked up front, a few that the game creates on
-	/// demand are created, and those settings are loaded; each exactly the way the game would do it on first use.
+	/// The game finds many managers the first time they are used by searching every object, which takes tens of milliseconds.
+	/// Behind the loading screen, those managers and a few settings files are set up the way the game would do it.
 	/// </summary>
 	internal static class SingletonPrimer
 	{
@@ -54,7 +52,7 @@ namespace GK2Performance
 			}
 		}
 
-		/// <summary>Links every scene manager that exists but is not linked yet, like the game's first-use search does.</summary>
+		/// <summary>Links every manager that exists but isn't linked yet, like the game's own search does.</summary>
 		private static void LinkExisting()
 		{
 			var missing = SingletonTypes().Where(t => typeof(MonoBehaviour).IsAssignableFrom(t) && !HasInstance(t)).ToList();

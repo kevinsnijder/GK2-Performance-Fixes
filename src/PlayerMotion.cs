@@ -4,7 +4,7 @@ using UnityEngine;
 namespace GK2Performance
 {
 	/// <summary>
-	/// The player moves with the physics tick (50 Hz) while the screen draws faster, which makes walking judder.
+	/// The player moves with the 50 Hz physics tick while the screen draws faster, so walking judders.
 	/// Turns on interpolation for the player's physics body.
 	/// </summary>
 	internal static class PlayerMotion

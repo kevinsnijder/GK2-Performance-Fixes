@@ -23,7 +23,7 @@ namespace GK2Performance
 	[HarmonyPatch(typeof(BugReportScreenshot), nameof(BugReportScreenshot.Capture))]
 	internal static class BugReportScreenshotPatch
 	{
-		/// <summary>Skips the ~0.5 s screenshot the game captures for its bug reporter every time the pause menu opens.</summary>
+		/// <summary>Skips the ~0.5 s screenshot the game takes for its bug reporter when the pause menu opens.</summary>
 		private static bool Prefix(Action onDone)
 		{
 			if (!BugReporterSwitch.IsOn())
@@ -39,7 +39,7 @@ namespace GK2Performance
 	[HarmonyPatch(typeof(UIGamePauseWindow), "CreateBugReportButton")]
 	internal static class PauseBugReportButtonPatch
 	{
-		/// <summary>Hides the pause menu's "Report a bug" button, which would do nothing without the bug reporter.</summary>
+		/// <summary>Hides the pause menu's "Report a bug" button, which does nothing without the bug reporter.</summary>
 		private static bool Prefix()
 		{
 			return !BugReporterSwitch.IsOn();
@@ -58,8 +58,8 @@ namespace GK2Performance
 	}
 
 	/// <summary>
-	/// The character window is not part of the UI scene; the game creates it the first time it opens, which freezes the
-	/// game for a moment. It is created behind the loading screen instead, the same way the game would.
+	/// The game creates the character window the first time it opens, which freezes for a moment.
+	/// It is created behind the loading screen instead.
 	/// </summary>
 	internal static class WindowPrecreate
 	{
@@ -95,7 +95,7 @@ namespace GK2Performance
 			cellsPending = enabled;
 		}
 
-		/// <summary>Called every frame. Creates the window once its prefab has been loaded, and fills the item cell pool.</summary>
+		/// <summary>Runs every frame. Creates the window once its prefab is loaded, and fills the item cell pools.</summary>
 		internal static void Tick()
 		{
 			if (cellsPending)
@@ -118,8 +118,8 @@ namespace GK2Performance
 		}
 
 		/// <summary>
-		/// Chest and inventory windows take their item cells and storage panels from pools that start nearly empty, so the
-		/// first big chest creates hundreds of them at once. The pools are filled a few per frame. Returns true while not done.
+		/// Chest and inventory windows take item cells from pools that start almost empty, so the first big chest
+		/// creates hundreds at once. The pools are filled a few per frame. Returns true while not done.
 		/// </summary>
 		private static bool FillPools()
 		{
@@ -165,8 +165,8 @@ namespace GK2Performance
 	}
 
 	/// <summary>
-	/// The game loads each menu from disk the first time it opens, which lags. After the world has loaded,
-	/// all menus are loaded in the background (a couple per frame) and kept in memory.
+	/// The game loads each menu from disk the first time it opens, which lags.
+	/// After the world has loaded, all menus are loaded in the background and kept in memory.
 	/// </summary>
 	internal static class UiWindowPrefetch
 	{
@@ -189,7 +189,6 @@ namespace GK2Performance
 			}
 		}
 
-		/// <summary>True while menus are still being loaded.</summary>
 		internal static bool IsBusy
 		{
 			get
@@ -225,7 +224,7 @@ namespace GK2Performance
 			BuildQueue();
 		}
 
-		/// <summary>Called every frame. Starts a few loads per frame; the handles are kept so the menus stay loaded.</summary>
+		/// <summary>Runs every frame. Starts a few loads and keeps the handles, so the menus stay loaded.</summary>
 		internal static void Tick(bool worldReady)
 		{
 			if (!Enabled)

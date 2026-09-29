@@ -6,10 +6,8 @@ using UnityEngine;
 namespace GK2Performance
 {
 	/// <summary>
-	/// Buildings, stations, trees and NPCs start loading their visuals when they enter the band around the screen. The game
-	/// does this for every object that enters in the same frame, which hitches while walking. Here each frame gets a small
-	/// time budget; objects over budget start one frame later, still well before they reach the screen. Objects that just
-	/// left the band keep their visuals a little longer, so walking back and forth doesn't reload them.
+	/// Buildings, trees and NPCs start loading when they near the screen, all in the same frame, which hitches while walking.
+	/// Each frame gets a small time budget; the rest starts a frame later. Objects that just left keep their visuals a bit longer.
 	/// </summary>
 	internal static class PrewarmThrottle
 	{
@@ -54,8 +52,8 @@ namespace GK2Performance
 		}
 
 		/// <summary>
-		/// Called before the game changes an object's state. May postpone the start of a load or keep an object loaded.
-		/// Returns true when a load is about to start, so the caller can time it.
+		/// Called before the game changes an object's state. May postpone a load or keep an object loaded.
+		/// Returns true when a load starts.
 		/// </summary>
 		internal static bool Resolve(IChunkableObject obj, ref ChunkVisibilityState state)
 		{
@@ -102,8 +100,8 @@ namespace GK2Performance
 		}
 
 		/// <summary>
-		/// Runs once a second. The game stops updating an object once it has left the band, so objects kept loaded are
-		/// unloaded here once they are further away, or all at once when the feature is switched off.
+		/// Runs once a second. Unloads kept objects once they are further away.
+		/// Unloads all of them when the feature is switched off.
 		/// </summary>
 		internal static void Sweep()
 		{

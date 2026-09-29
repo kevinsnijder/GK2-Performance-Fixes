@@ -5,8 +5,8 @@ using UnityEngine;
 namespace GK2Performance
 {
 	/// <summary>
-	/// The game hides the loading screen while the mod is still loading the area's objects and menus in the background,
-	/// which made the first seconds of play hitch. The loading screen now stays up until that work is done, with a time limit.
+	/// Keeps the loading screen up until the mod has loaded the area and menus, with a time limit,
+	/// so the first seconds of play don't hitch.
 	/// </summary>
 	internal static class LoadingScreenHold
 	{
@@ -36,7 +36,7 @@ namespace GK2Performance
 			return preloading || UiWindowPrefetch.IsBusy || WindowPrecreate.IsBusy;
 		}
 
-		/// <summary>Returns false when the hide is postponed until the background work is done. Any error lets the game hide it.</summary>
+		/// <summary>Returns false while the hide is postponed. Any error lets the game hide it.</summary>
 		internal static bool OnHide(UILoadingOverlay overlay)
 		{
 			try
@@ -74,7 +74,7 @@ namespace GK2Performance
 			heldOverlay = null;
 		}
 
-		/// <summary>Called every frame. Hides the held loading screen once the work is done or the time limit is reached.</summary>
+		/// <summary>Runs every frame. Hides the loading screen once the work is done or the time limit is reached.</summary>
 		internal static void Tick()
 		{
 			if (heldOverlay == null)

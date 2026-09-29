@@ -5,8 +5,8 @@ using UnityEngine;
 namespace GK2Performance
 {
 	/// <summary>
-	/// Opening a menu makes one long frame, and the trailing camera jumps to cover it. For the first frames after a menu
-	/// opens, the camera moves by a normal frame's time instead.
+	/// Opening a menu makes one long frame, and the camera jumps to catch up.
+	/// For the first frames after a menu opens, the camera moves as if a normal frame passed.
 	/// </summary>
 	internal static class CameraMenuSmoothing
 	{
@@ -36,7 +36,7 @@ namespace GK2Performance
 			}
 		}
 
-		/// <summary>Called every frame from Update (before Cinemachine's LateUpdate).</summary>
+		/// <summary>Runs every frame, before the camera updates.</summary>
 		internal static void Tick()
 		{
 			if (overriding)

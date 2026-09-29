@@ -6,9 +6,8 @@ using UnityEngine;
 namespace GK2Performance
 {
 	/// <summary>
-	/// Most world objects set up their 3D sprite meshes the first time they become active (Object3DMesh.Start), which adds
-	/// up to tens of milliseconds when a whole area appears at once. For the copies the mod creates behind the loading
-	/// screen, that one-time setup runs right away, the same way it would run on first use.
+	/// World objects set up their 3D sprite meshes the first time they become active, which adds up when a whole area appears.
+	/// For the copies the mod creates behind the loading screen, that setup runs right away.
 	/// </summary>
 	internal static class MeshPreinit
 	{

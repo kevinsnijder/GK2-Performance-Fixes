@@ -8,10 +8,8 @@ using UnityEngine;
 namespace GK2Performance
 {
 	/// <summary>
-	/// For the "No More Running Back" Workshop mod (GK2Notepad). After a chest window opens or closes, its chest lock
-	/// feature redraws the window one storage at a time, and the game re-lays out the whole window after each one
-	/// (~0.25 s in the yard). The mod takes over that redraw: same storages, same order, but the window is laid out
-	/// once at the end. That mod switches itself off when its code is patched, so its fields are only read and written.
+	/// For No More Running Back: after a chest window opens or closes, it redraws the window one storage at a time,
+	/// and the game lays out the whole window after each one. The mod does the same redraw with one layout at the end.
 	/// </summary>
 	internal static class NotepadChestRedraw
 	{
@@ -96,8 +94,8 @@ namespace GK2Performance
 		}
 
 		/// <summary>
-		/// Called every frame from LateUpdate. Takes over the redraw that No More Running Back asked for this frame, and
-		/// carries out a taken-over redraw once that mod has re-applied its chest locks.
+		/// Runs every frame after Update. Takes over the redraw No More Running Back asked for, and carries it out
+		/// once that mod has re-applied its chest locks.
 		/// </summary>
 		internal static void LateTick()
 		{
@@ -142,7 +140,7 @@ namespace GK2Performance
 			refreshWindowField.SetValue(chestLock, false);
 		}
 
-		/// <summary>Waits while the locks are not re-applied yet (e.g. during saving), like No More Running Back would.</summary>
+		/// <summary>Waits while the chest locks are not re-applied yet, like No More Running Back would.</summary>
 		private static void CheckPending()
 		{
 			var chestLock = pendingFor;

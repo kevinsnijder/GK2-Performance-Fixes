@@ -7,9 +7,8 @@ using UnityEngine;
 namespace GK2Performance
 {
 	/// <summary>
-	/// For the "No More Running Back" Workshop mod (GK2Notepad). Its queue next to chests is built when a chest opens
-	/// and built again two frames later, which only repeats the same work. The repeat is cancelled when the queue was
-	/// just built. That mod switches itself off when its code is patched, so its fields are only read and written.
+	/// For No More Running Back: its queue next to chests is built when a chest opens and again two frames later.
+	/// The repeat is cancelled when the queue was just built.
 	/// </summary>
 	internal static class NotepadRebuild
 	{
@@ -71,7 +70,7 @@ namespace GK2Performance
 			}
 		}
 
-		/// <summary>Called every frame from Update, between the frame a rebuild is scheduled and the frame it runs.</summary>
+		/// <summary>Runs every frame, between the frame a rebuild is scheduled and the frame it runs.</summary>
 		internal static void Tick()
 		{
 			if (!resolved || !Plugin.EnableOptimizations.Value || !Plugin.SkipNotepadRebuild.Value || panels.Count == 0)
@@ -98,8 +97,8 @@ namespace GK2Performance
 		}
 
 		/// <summary>
-		/// Cancels a scheduled rebuild when the queue was already built in the frame that scheduled it.
-		/// The rebuild scheduled on the first open of a chest window is always kept.
+		/// Cancels a scheduled rebuild when the queue was already built that frame.
+		/// The first open of a chest window always keeps it.
 		/// </summary>
 		private static void Check(MonoBehaviour panel)
 		{

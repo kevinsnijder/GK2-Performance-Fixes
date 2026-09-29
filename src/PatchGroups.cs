@@ -17,9 +17,13 @@ namespace GK2Performance
 		internal const string BUG_REPORTER = "DisableBugReporter";
 		internal const string NOTEPAD_CHEST_REDRAW = "BatchNotepadChestRedraw";
 		internal const string WORLD_UPDATES = "SmoothWorldUpdates";
+		internal const string TERRAIN_BACK_LIGHT = "SkipBackLightOnTerrain";
 	}
 
-	/// <summary>Names the feature a Harmony patch class belongs to. Patches of one feature are applied or removed together.</summary>
+	/// <summary>
+	/// Names the feature a patch class belongs to; its patches are applied or removed together.
+	/// The classes it uses are set up first, so a missing game field turns the feature off up front.
+	/// </summary>
 	[AttributeUsage(AttributeTargets.Class)]
 	internal sealed class PatchGroupAttribute : Attribute
 	{
@@ -31,13 +35,12 @@ namespace GK2Performance
 
 		public string Name { get; }
 
-		/// <summary>Classes the feature needs. They are set up before patching, so a missing game field turns the feature off up front.</summary>
 		public Type[] Uses { get; }
 	}
 
 	/// <summary>
-	/// Applies the patches feature by feature. When a game update breaks one feature's patch, only that feature is removed;
-	/// the others keep working and the game runs as usual for the removed one.
+	/// Applies the patches feature by feature.
+	/// When a game update breaks one feature, only that feature is removed.
 	/// </summary>
 	internal static class PatchGroups
 	{

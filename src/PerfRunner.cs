@@ -50,7 +50,8 @@ namespace GK2Performance
 			};
 			lateJobs = new[]
 			{
-				NewJob("No More Running Back chest redraw", Features.NOTEPAD_CHEST_REDRAW, NotepadChestRedraw.LateTick)
+				NewJob("No More Running Back chest redraw", Features.NOTEPAD_CHEST_REDRAW, NotepadChestRedraw.LateTick),
+				NewJob("back light", null, BackLightFixes.LateTick)
 			};
 		}
 
@@ -70,12 +71,41 @@ namespace GK2Performance
 		private void OnEnable()
 		{
 			SceneManager.sceneUnloaded += OnSceneUnloaded;
+			SceneManager.sceneLoaded += OnSceneLoaded;
+			Camera.onPreCull += OnPreCull;
 			wasActive = IsStreamingActive();
 		}
 
 		private void OnDisable()
 		{
 			SceneManager.sceneUnloaded -= OnSceneUnloaded;
+			SceneManager.sceneLoaded -= OnSceneLoaded;
+			Camera.onPreCull -= OnPreCull;
+		}
+
+		private static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+		{
+			try
+			{
+				TerrainBackLight.Reset();
+				TerrainBackLight.Validate();
+			}
+			catch (Exception ex)
+			{
+				TerrainBackLight.Fail(ex.GetBaseException().Message);
+			}
+		}
+
+		private static void OnPreCull(Camera camera)
+		{
+			try
+			{
+				TerrainBackLight.SyncMasks();
+			}
+			catch (Exception ex)
+			{
+				TerrainBackLight.Fail(ex.GetBaseException().Message);
+			}
 		}
 
 		private void OnSceneUnloaded(Scene scene)
@@ -111,7 +141,7 @@ namespace GK2Performance
 			}
 		}
 
-		/// <summary>Runs each feature's per-frame work. Features switched off at runtime hand their objects back to the game.</summary>
+		/// <summary>Runs each feature's per-frame work. A feature switched off while playing gives its objects back.</summary>
 		private void Update()
 		{
 			var active = IsStreamingActive();

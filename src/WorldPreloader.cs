@@ -9,8 +9,8 @@ using UnityEngine.ResourceManagement.AsyncOperations;
 namespace GK2Performance
 {
 	/// <summary>
-	/// When an area loads, loads every prefab it uses and puts a few ready-made copies into the game's own pools,
-	/// nearest first, so walking into unvisited parts of the map doesn't hitch. Runs on a per-frame time budget.
+	/// When an area loads, loads every prefab it uses and puts a few ready copies into the game's pools, nearest first,
+	/// so walking into new parts of the map doesn't hitch. Runs on a time budget per frame.
 	/// </summary>
 	internal static class WorldPreloader
 	{
@@ -161,7 +161,7 @@ namespace GK2Performance
 			return new Vector3(pos.x, 0f, pos.z);
 		}
 
-		/// <summary>Called every frame. Drops work for areas that were unloaded meanwhile, then continues within the budget.</summary>
+		/// <summary>Runs every frame. Drops work for unloaded areas, then continues within the budget.</summary>
 		internal static void Tick()
 		{
 			if (Queue.Count == 0)
@@ -205,7 +205,7 @@ namespace GK2Performance
 			Budget.Stop();
 		}
 
-		/// <summary>Advances one item; returns true when it is finished (or given up).</summary>
+		/// <summary>Advances one item. Returns true when it is done or given up.</summary>
 		private static bool Step(Item item, ref int inFlight, int maxInFlight, float budgetMs)
 		{
 			switch (item.Stage)
@@ -312,7 +312,7 @@ namespace GK2Performance
 			}
 		}
 
-		/// <summary>Pre-creates idle instances one at a time within the budget. Returns true when the target is reached.</summary>
+		/// <summary>Creates idle copies one at a time within the budget. Returns true when enough exist.</summary>
 		private static bool WarmUp(Item item, float budgetMs)
 		{
 			var target = Mathf.Min(item.Uses, Plugin.PreloadInstancesPerPrefab.Value);
@@ -389,7 +389,7 @@ namespace GK2Performance
 			}
 		}
 
-		/// <summary>Creates one idle part the same way the game's own pool warm-up does.</summary>
+		/// <summary>Creates one idle part the way the game's own pool warm-up does.</summary>
 		private static bool CreateWgoPart(string key)
 		{
 			var owner = GamePools.Wgo;

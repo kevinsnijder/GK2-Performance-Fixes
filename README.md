@@ -7,7 +7,7 @@ I have not doublechecked every line of code in this repository.
 
 **Links:** [Steam Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=3809616755) · [Nexus Mods](https://www.nexusmods.com/graveyardkeeper2/mods/211) · [Source code](https://github.com/kevinsnijder/GK2-Performance-Fixes)
 
-A BepInEx 5 mod for **Graveyard Keeper 2** that removes stutter and freezes while walking, using doors, meeting NPCs and workers, and opening menus. It doesn't change how the game looks or plays, and it never touches your save files.
+A BepInEx 5 mod for **Graveyard Keeper 2** that removes stutter and freezes while walking, using doors, meeting NPCs and workers, and opening menus. It also draws outdoor areas faster. It doesn't change how the game plays, the only visual change is a softer back light (optional), and it never touches your save files.
 
 ## What it fixes
 
@@ -29,6 +29,8 @@ A BepInEx 5 mod for **Graveyard Keeper 2** that removes stutter and freezes whil
 | Every menu lags the first time it opens | Loads all menus in the background | `PrefetchMenus` |
 | The inventory lags the first time it opens, and big chests create hundreds of item cells at once | Creates the inventory window and the item cells behind the loading screen | `PrecreateWindows` |
 | The camera jumps when you open a menu while walking | Keeps the camera moving at a normal pace for the first frames | `SmoothCameraOnMenuOpen` |
+| The game's back light, a second sun pointing upward, draws every object it touches once more (about a fifth of the frame time outdoors) for a faint bluish rim on tree leaves and some walls | `Soft` (default): the same light is added to the normal lighting pass instead. It looks almost the same, only a little softer. `Off` turns it off with the game's own switch | `BackLight` |
+| With `BackLight = Normal`: the back light can never reach the ground, yet the ground is drawn once more for it every frame (about 200 extra draw calls outdoors) | The ground skips that pass; every other light and camera sees it exactly as before | `SkipBackLightOnTerrain` |
 | CPU wasted on the game's many log messages | Stops recording where each info or warning message came from; errors still do | `DisableInfoStackTraces` |
 | With [No More Running Back](https://steamcommunity.com/sharedfiles/filedetails/?id=3806668942): a second hitch right after a chest opens, because its queue next to chests is built twice | Skips the repeat when the queue was just built | `SkipNotepadRebuild` |
 | With [No More Running Back](https://steamcommunity.com/sharedfiles/filedetails/?id=3806668942): ~0.25 s freeze when opening a chest in a big storage area like the yard (21 storages) | Redraws the chest window in one go instead of one storage at a time (270 ms → 35 ms) | `BatchNotepadChestRedraw` |
@@ -52,13 +54,16 @@ A scripted run on the same save: load, leave the house, walk through the village
 | Yard chest (21 storages), slowest frame | 284 ms | 177 ms |
 | A worker starting a craft near you | ~45 ms | no hitch |
 | Loading screen | 10 s | 15 s |
+| Yard by day, average frame rate | 92 fps (10.9 ms) | 110 fps (9.1 ms) |
+| Yard at night, average frame rate | 74 fps (13.5 ms) | 79 fps (12.7 ms) |
+| Walking, average frame rate | 100 fps (10.0 ms) | 106 fps (9.4 ms) |
 
 ### Not fixed
 
 - **Some sounds:** the game streams every sound from disk. Starting certain sounds costs the game ~10 ms, and a mod can't change how sounds are stored.
 - **The first chest of a session with No More Running Back** takes ~0.3 s: the game draws the window for the first time and that mod sets itself up. Later chests are fast. With this mod it's about 50 ms slower than without, because that mod's setup searches all loaded objects and this mod keeps more of them ready.
 - **Pathfinding updates** from a few scripted events can take ~40 ms. They're rare.
-- **Busy areas like the yard** are limited by rendering, not by stutter. The mod doesn't change graphics.
+- **Busy areas like the yard** are still limited by rendering: the game draws every object once for each light that touches it. The back light is the only light that can be made cheaper without changing the picture much.
 - **Crafting finishing at busy stations** runs the game's own crafting logic (and Better Auto Crafting's, if installed), which can take 10–30 ms.
 
 ## Install
@@ -77,7 +82,7 @@ Graveyard Keeper 2
          └─ GK2Performance.dll
 ```
 
-`BepInEx/LogOutput.log` should then contain `GK2 Performance 1.1.0 loaded.`
+`BepInEx/LogOutput.log` should then contain `GK2 Performance 1.1.1 loaded.`
 
 **Uninstall:** delete `BepInEx/plugins/GK2Performance`, and optionally `BepInEx/config/gk2.performance.cfg`.
 
@@ -113,11 +118,13 @@ Graveyard Keeper 2
 | Menus | `SkipNotepadRebuild` | `true` | No More Running Back: build the chest queue once instead of twice. |
 | Menus | `BatchNotepadChestRedraw` | `true` | No More Running Back: redraw the chest window in one go. |
 | Logging | `DisableInfoStackTraces` | `true` | Cheaper log messages. |
+| Lighting | `BackLight` | `Soft` | `Normal`: as in the game. `Soft`: blended into the normal lighting, much faster outdoors, looks almost the same. `Off`: no back light, fastest. |
+| Lighting | `SkipBackLightOnTerrain` | `true` | With `BackLight = Normal`: the ground skips the back light's extra pass. No visual change. |
 
 ## Safety
 
 - Everything happens in memory. The mod never reads or writes save data, so you can add or remove it at any time, even mid-save.
-- Nothing looks different. Objects are only loaded or kept early while they're off screen. One small exception: particles from decor just off screen may drift into view, where the game would cut them off at the edge.
+- `BackLight` is the only setting that changes the picture: `Soft` (default) makes the faint rim light on leaves and walls a little softer. Set it to `Normal` and nothing looks different. Everything else only loads or keeps objects early while they're off screen or kept early while they're off screen. One small exception: particles from decor just off screen may drift into view, where the game would cut them off at the edge.
 - Game updates: each fix is applied on its own. If an update changes something one fix relies on, only that fix switches off and the rest keep working; the game then behaves as usual for that part. The reason is logged in `BepInEx/LogOutput.log`. A fix that hits an unexpected error while playing also switches itself off instead of interrupting the game.
 - The loading screen is never kept up longer than `MaxHoldSeconds`, and any error lets the game hide it as usual.
 
@@ -148,6 +155,9 @@ The DLL ends up in `bin/Release/GK2Performance.dll`. `nuget.config` pins nuget.o
 
 ## Changelog
 
+- **1.1.1:**
+  - Higher frame rate outdoors: the back light no longer draws every object a second time. About 92 → 110 fps in the yard by day.
+  - The off-screen loading does less work every frame, most of all while standing still (about 0.2 ms per frame less in the yard).
 - **1.1.0:**
   - No more hitches in the first seconds after loading: the loading screen stays up (about 5 s longer) until the area and menus are loaded.
   - Smoother walking: buildings, stations, trees and NPCs near the screen now load a little at a time instead of all in one frame, and NPCs load before they walk into view.

@@ -7,9 +7,8 @@ using UnityEngine.ResourceManagement.AsyncOperations;
 namespace GK2Performance
 {
 	/// <summary>
-	/// The game loads a decor prefab from disk with a blocking call the first time it is needed. Before the mod spawns
-	/// such an object early, it loads the prefab in the background first, so the game's blocking load returns at once.
-	/// The mod's handle is released once the game holds its own.
+	/// The game loads a decor prefab from disk with a blocking call the first time it is needed.
+	/// The mod loads it in the background first, so that call returns at once.
 	/// </summary>
 	internal static class PrefabWarmer
 	{
@@ -28,7 +27,7 @@ namespace GK2Performance
 		private static readonly List<string> SweepBuffer = new List<string>();
 		private static int inFlight;
 
-		/// <summary>True when pre-spawning this object right now won't trigger a blocking disk load.</summary>
+		/// <summary>True when spawning this object now won't load anything from disk.</summary>
 		internal static bool IsReady(IChunkableObject obj)
 		{
 			if (!Plugin.AsyncPrefabWarmup.Value)
@@ -56,7 +55,7 @@ namespace GK2Performance
 			return true;
 		}
 
-		/// <summary>True when the prefab is in memory. Otherwise starts a background load (if none is running) and returns false.</summary>
+		/// <summary>True when the prefab is in memory. Otherwise starts a background load and returns false.</summary>
 		private static bool IsPathReady(string path, bool isBaked)
 		{
 			if (string.IsNullOrEmpty(path) || Failed.Contains(path))
@@ -96,7 +95,7 @@ namespace GK2Performance
 			return isBaked ? GamePools.BakedPools() : GamePools.ConstructorPools();
 		}
 
-		/// <summary>Release our handles once the game has its own pool (or after a timeout). Runs once per frame.</summary>
+		/// <summary>Runs every frame. Releases our handles once the game has its own pool, or after a timeout.</summary>
 		internal static void Sweep()
 		{
 			if (Warming.Count == 0)

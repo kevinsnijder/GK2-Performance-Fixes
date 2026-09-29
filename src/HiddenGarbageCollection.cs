@@ -4,9 +4,8 @@ using UnityEngine.Scripting;
 namespace GK2Performance
 {
 	/// <summary>
-	/// Every minute or two the game's garbage collector finishes a cycle, which freezes one frame for about 20 ms. At
-	/// moments the screen is black anyway (a door fade, the end of a loading screen) the collector gets a short time
-	/// budget to do that work, so the next pause during play comes later. What doesn't fit continues as usual.
+	/// The garbage collector freezes a frame for about 20 ms every minute or two.
+	/// While the screen is black (door fade, end of loading) it gets time to do that work, so it happens less during play.
 	/// </summary>
 	internal static class HiddenGarbageCollection
 	{
