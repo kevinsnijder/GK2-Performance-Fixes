@@ -5,10 +5,12 @@
 	"contentfolder"		"C:\Users\kevin\Downloads\Mods\GK2-Performance-Fixes\workshop\content"
 	"previewfile"		"C:\Users\kevin\Downloads\Mods\GK2-Performance-Fixes\workshop\preview.png"
 	"visibility"		"0"
-	"title"		"GK2 Performance"
+	"title"		"Performance Fixes"
 	"changenote"		"v1.1.0: much less stutter. No more hitches in the first seconds after loading (the loading screen stays up about 5 s longer until everything is loaded). Buildings, trees and NPCs near the screen now load a little at a time instead of all in one frame, and NPCs load before they walk into view. No freeze the first time a worker starts a craft near you. Garbage collection mostly happens during door fades now. A slow frame no longer makes the next one slow too. The inventory window and item cells for big chests are prepared behind the loading screen. A game update now only turns off the fix it affects instead of the whole mod."
 	"description"		"Walking judders, doors freeze the game, NPCs pop in and opening a chest stutters?
 This mod removes those hitches without changing how the game looks or plays.
+
+⚠️ [b]This might not make it better for your system, maybe it even makes the stuttering worse. Every system is different and unfortunately I only have 1 system to debug and make traces on.[/b] ⚠️
 
 [h2]Features[/h2]
 [list]
@@ -46,7 +48,7 @@ Same save, same scripted run (walk through the village and port, doors, chests, 
 
 [h2]Compatibility[/h2]
 [list]
-[*]Tested with No More Running Back, [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3809824680]GK2 Sort To Nearby Chests[/url], Better Auto Crafting and GK2 Move Stations
+[*]Tested with No More Running Back, [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3809824680]Sort to nearby chests[/url], Better Auto Crafting and GK2 Move Stations
 [*]No More Running Back is optional; without it everything else works the same
 [/list]
 

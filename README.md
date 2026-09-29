@@ -1,11 +1,13 @@
 ## ⚠️ AI DISCLAIMER: This project is a vibecoded project.
 I have not doublechecked every line of code in this repository.
 
-# GK2 Performance
+# Performance Fixes
+
+<img src="workshop/preview.png" alt="Performance Fixes" width="160" align="right">
+
+**Download:** [Steam Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=3809616755) · [Nexus Mods](https://www.nexusmods.com/graveyardkeeper2/mods/211)
 
 A BepInEx 5 mod for **Graveyard Keeper 2** that removes stutter and freezes while walking, using doors, meeting NPCs and workers, and opening menus. It doesn't change how the game looks or plays, and it never touches your save files.
-
-[Steam Workshop page](https://steamcommunity.com/sharedfiles/filedetails/?id=3809616755)
 
 ## What it fixes
 
@@ -121,7 +123,7 @@ Graveyard Keeper 2
 
 ## Compatibility
 
-Tested with [No More Running Back](https://steamcommunity.com/sharedfiles/filedetails/?id=3806668942) (installs `GK2Notepad.dll`), [GK2 Sort To Nearby Chests](https://steamcommunity.com/sharedfiles/filedetails/?id=3809824680), Better Auto Crafting and GK2 Move Stations.
+Tested with [No More Running Back](https://steamcommunity.com/sharedfiles/filedetails/?id=3806668942) (installs `GK2Notepad.dll`), [Sort to nearby chests](https://steamcommunity.com/sharedfiles/filedetails/?id=3809824680), Better Auto Crafting and GK2 Move Stations.
 
 No More Running Back switches itself off when another mod patches its code. This mod never patches it; it only reads and sets a few of its values and patches the game's own code instead. The mod doesn't patch any method that the other tested mods patch.
 

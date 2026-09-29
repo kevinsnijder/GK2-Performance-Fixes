@@ -1,0 +1,88 @@
+Walking judders, doors freeze the game, NPCs pop in and opening a chest stutters?
+This mod tries to remove those hitches without changing how the game looks or plays.
+
+⚠️ [b]This might not make it better for your system, maybe it even makes the stuttering worse. Every system is different and unfortunately I only have 1 system to debug and make traces on. [/b]⚠️
+
+[size=4][b]Features[/b][/size]
+[list]
+[*][b]Smooth walking:[/b] the character and camera no longer judder while you walk[/*]
+[*][b]Less stutter while exploring:[/b] buildings, stations, trees and props load before they come on screen, a little at a time instead of all in one frame[/*]
+[*][b]NPCs and workers:[/b] load before they walk into view instead of at the last moment[/*]
+[*][b]Area preloading:[/b] everything an area needs is prepared behind the loading screen, so the first seconds of play are smooth (the loading screen takes a few seconds longer)[/*]
+[*][b]Doors and stairs:[/b] no more 0.5–1 s freeze when you use a door or staircase within the same area[/*]
+[*][b]Fewer random hitches:[/b] garbage collection happens during door fades, and game managers that the game would search for mid-play (for example the first time a worker starts a craft) are set up behind the loading screen[/*]
+[*][b]No knock-on hitches:[/b] after a slow frame, the game's world logic catches up over the next frames instead of all at once; no game time is lost[/*]
+[*][b]Instant pause menu:[/b] the ~0.5 s delay on Esc is gone (this disables the bug reporter and hides its button)[/*]
+[*][b]Faster menus:[/b] menus, the inventory window and the item cells for big chests are prepared in advance[/*]
+[*][b]Steady camera:[/b] opening a chest while walking no longer makes the camera jump[/*]
+[*][b]Smoother chests with [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3806668942]No More Running Back[/url]:[/b] no ~0.25 s freeze when a chest opens in a big storage area like the yard, and no second hitch right after[/*]
+[*]Less CPU wasted on the game's log messages[/*]
+[/list]
+All time budgets are per frame, so slower PCs spread the work over a few more frames instead of freezing longer.
+
+[size=4][b]Measured[/b][/size]
+Same save, same scripted run (walk through the village and port, doors, chests, pause menu):
+[list]
+[*]Door out / in: 1.0 s / 0.9 s freeze → hidden in the fade[/*]
+[*]Pause menu: 269 ms → 12 ms[/*]
+[*]Walking: frames over twice the usual frame time 36 → 6, frames over 25 ms 5 → 2[/*]
+[*]Yard chest (21 storages): 284 ms → 177 ms[/*]
+[*]Worker starting a craft near you: ~45 ms → no hitch[/*]
+[/list]
+
+[size=4][b]Not fixed[/b][/size]
+[list]
+[*]The game streams every sound from disk; starting some sounds costs ~10 ms, which a mod can't change[/*]
+[*]With No More Running Back, the first chest of a session still takes ~0.3 s (first draw of the window plus that mod's setup)[/*]
+[*]Busy areas like the yard are limited by rendering; the mod doesn't change graphics[/*]
+[/list]
+
+[size=4][b]Compatibility[/b][/size]
+[list]
+[*]Tested with No More Running Back, [url=https://www.nexusmods.com/graveyardkeeper2/mods/220]Sort to nearby chests[/url], Better Auto Crafting and GK2 Move Stations[/*]
+[*]No More Running Back is optional; without it everything else works the same[/*]
+[/list]
+
+[size=4][b]Safe to use[/b][/size]
+[list]
+[*]Never reads or writes save data; add or remove it at any time, including mid-save[/*]
+[*]No visual changes[/*]
+[*]If a game update changes something one fix relies on, only that fix switches off and the rest keep working[/*]
+[/list]
+
+[size=4][b]Requirements[/b][/size]
+[list]
+[*][url=https://github.com/BepInEx/BepInEx/releases/latest]BepInEx 5[/url][/*]
+[/list]
+
+[size=4][b]Installation[/b][/size]
+Download the file, open the zip and copy its [i]BepInEx[/i] folder into the game folder (Steam Library → right-click Graveyard Keeper 2 → Manage → Browse local files); merge the folders.
+
+Game folder after installing:
+[code]
+Graveyard Keeper 2
+└─ BepInEx
+     └─ plugins
+          └─ GK2Performance
+                └─ GK2Performance.dll   ← new[/code]
+
+[size=4][b]Configuration[/b][/size]
+[list]
+[*][i]BepInEx\config\gk2.performance.cfg[/i] is created on first start[/*]
+[*]Every feature can be switched off on its own; [i]EnableOptimizations = false[/i] turns everything off[/*]
+[*]Changes apply after restarting the game[/*]
+[/list]
+
+[size=4][b]Uninstall[/b][/size]
+Delete [i]BepInEx\plugins\GK2Performance[/i].
+
+[size=4][b]Source code[/b][/size]
+The full source is on GitHub:
+[url=https://github.com/kevinsnijder/GK2-Performance-Fixes]github.com/kevinsnijder/GK2-Performance-Fixes[/url]
+
+[size=4][b]Changelog[/b][/size]
+[b]v1.1.0[/b]: no hitches right after loading (the loading screen stays up until everything is loaded); buildings, trees and NPCs near the screen load a little at a time and NPCs load before they walk into view; no freeze the first time a worker starts a craft; garbage collection during door fades; no knock-on hitch after a slow frame; inventory window and chest item cells prepared in advance; a game update only turns off the affected fix
+[b]v1.0.3[/b]: with No More Running Back, no ~0.25 s freeze when opening a chest in a big storage area like the yard
+[b]v1.0.2[/b]: with No More Running Back, no second hitch right after a chest opens
+[b]v1.0.1[/b]: removed the chest-window speed-ups (they could leave No More Running Back's queue next to chests empty); the pause menu's Report a bug button is hidden; no camera jump when opening a chest while walking
+[b]v1.0.0[/b]: first release
